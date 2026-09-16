@@ -4,11 +4,11 @@ Backend Java do ArenaCode, uma plataforma competitiva de programação.
 
 ## Objetivo
 
-Prover API REST para submissõ£µ£s de código, julgamento automático, ranking, matchmaking e recomendaçª£o de problemas.
+Prover API REST para submissões de código, julgamento automático, ranking, matchmaking e recomendação de problemas.
 
 ## Aviso importante
 
-Este repositó¡¡¡rio contém **apenas o backend**. O frontend React/TypeScript será desenvolvido em outro repositó¡¡¡rio.
+Este repositório contém **apenas o backend**. O frontend React/TypeScript será desenvolvido em outro repositório.
 
 ## Tecnologias
 
@@ -23,10 +23,10 @@ Este repositó¡¡¡rio contém **apenas o backend**. O frontend React/TypeScrip
 
 - JDK 21+
 - Gradle 8+
-- PostgreSQL 15+
-- DBeaver (opcional, para inspeçª£o do banco)
+- PostgreSQL 15+ (ou Docker apenas para rodar os testes de integração via Testcontainers)
+- DBeaver (opcional, para inspeção do banco)
 
-## Estrutura de diretó¡¡¡rios
+## Estrutura de diretórios
 
 ```
 arenacode-backend/
@@ -65,19 +65,33 @@ arenacode-backend/
 ./gradlew clean
 ```
 
-## Documentaçª£o
+## Health checks
 
-- [Arquitetura e convençªµes](docs/architecture/conventions.md)
-- [Decisõ£µ£s de arquitetura (ADRs)](docs/architecture/adr/)
+- Endpoint técnico simples: `GET /api/v1/health`
+- Spring Boot Actuator: `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`
+
+Detalhes completos em [docs/operations/local-development.md](docs/operations/local-development.md).
+
+## OpenAPI / Swagger
+
+Ainda **não configurado**. O Springdoc OpenAPI será adicionado em um próximo commit, junto com os primeiros endpoints de domínio.
+
+## Documentação
+
+- [Arquitetura e convenções](docs/architecture/conventions.md)
+- [Decisões de arquitetura (ADRs)](docs/architecture/adr/)
 - [Modelo de dados](docs/database/)
+- [Migrations](docs/database/migrations.md)
 - [API](docs/api/)
-- [Operaçªµes](docs/operations/)
+- [Operações](docs/operations/)
+- [Configuração de ambiente](docs/operations/configuration.md)
+- [Desenvolvimento local](docs/operations/local-development.md)
 - [Demo](docs/demo/)
 
 ## Status
 
-**Fundaçª£o** - Estrutura inicial organizada, sem funcionalidades de negó|cio implementadas.
+**Fundação** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (técnico + Actuator) implementados. Ainda sem funcionalidades de domínio.
 
-## Licençª£o
+## Licença
 
-Proprietá¡¡|rio. Todos os direitos reservados.
+Proprietário. Todos os direitos reservados.
