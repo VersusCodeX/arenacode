@@ -72,15 +72,18 @@ spotless {
 }
 
 spotbugs {
-	spotbugsTest.enabled = false
 	reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+}
+
+tasks.spotbugsTest {
+	enabled = false
 }
 
 tasks.spotbugsMain {
 	reports {
 		create("html") {
-			outputLocation.set(file("$buildDir/reports/spotbugs/main/spotbugs.html"))
-			setStylesheets("high")
+			outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main/spotbugs.html"))
+			stylesheet.set("high")
 		}
 	}
 }
