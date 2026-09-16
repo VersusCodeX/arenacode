@@ -3,19 +3,16 @@ spring:
     name: arenacode
   profiles:
     default: dev
-  # TEMPORÁRIO: nenhum datasource foi conectado ainda nesta etapa do projeto.
-  # As autoconfigurações abaixo são desativadas para permitir que o contexto Spring
-  # suba (e os testes passem) sem um PostgreSQL real disponível.
-  # Remover esta lista de exclusões quando spring.datasource.* for configurado
-  # com credenciais reais (via variáveis de ambiente) em um commit futuro.
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration
-      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
-      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
   jackson:
     time-zone: UTC
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
   jpa:
     open-in-view: false
     hibernate:

@@ -1,8 +1,20 @@
 # Perfil de desenvolvimento local.
 # Nenhuma credencial real deve ser inserida aqui.
 # Todas as configurações sensíveis devem vir de variáveis de ambiente (.env local, nunca commitado).
+#
+# Os valores abaixo (localhost:5432/arenacode, usuário/senha "arenacode") são apenas
+# defaults de conveniência para desenvolvimento local. Sobrescreva via DATABASE_URL,
+# DATABASE_USERNAME e DATABASE_PASSWORD no seu .env local quando necessário.
 
 spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/arenacode}
+    username: ${DATABASE_USERNAME:arenacode}
+    password: ${DATABASE_PASSWORD:arenacode}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
   jpa:
     show-sql: true
     properties:

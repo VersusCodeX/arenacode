@@ -6,43 +6,55 @@ O backend utiliza profiles do Spring Boot para separar configurações por ambie
 
 | Profile | Arquivo | Uso |
 |---------|---------|-----|
-| `dev` | `application-dev.yaml` | Desenvolvimento local, logs verbosos, SQL visível para depuração. |
-| `test` | `application-test.yaml` | Execução de testes automatizados. Nunca aponta para banco de produção. Preparado para uso futuro com Testcontainers. |
-| `prod` | `application-prod.yaml` | Produção. Logs reduzidos, sem detalhes sensíveis expostos, sem credenciais no arquivo. |
+| `dev` | `application-dev.yaml` | Desenvolvimento local, logs verbosos, SQL visível para depuração, datasource com defaults locais de conveniência. |
+| `test` | `application-test.yaml` | Execução de testes automatizados. O datasource real é injetado dinamicamente pelo Testcontainers (`@ServiceConnection`), nunca aponta para banco de produção. |
+| `prod` | `application-prod.yaml` | Produção. Logs reduzidos, sem detalhes sensíveis expostos, sem credenciais no arquivo — exige `DATABASE_URL`, `DATABASE_USERNAME` e `DATABASE_PASSWORD` via ambiente. |
 
 O profile ativo é selecionado pela variável de ambiente `SPRING_PROFILES_ACTIVE`.
 
-## Exclusão temporária de autoconfiguração (IMPORTANTE)
+## Datasource e PostgreSQL
 
-Como nenhum `spring.datasource.*` foi configurado ainda (o PostgreSQL será conectado em uma etapa futura), o `application.yaml` desativa temporariamente as seguintes autoconfigurações do Spring Boot, via `spring.autoconfigure.exclude`:
+O datasource agora está configurado em `application.yaml` (base) usando variáveis de ambiente, sem defaults:
 
-- `org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration`
-- `org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration`
-- `org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration`
-- `org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration`
+```yaml
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
+```
 
-**Motivo:** sem essa exclusão, o Spring Boot tenta criar automaticamente um bean `DataSource` na inicialização (pois `spring-boot-starter-data-jpa` e Flyway estão no classpath), o que faz o contexto da aplicação falhar ao subir — incluindo em testes (`ArenacodeApplicationTests#contextLoads`), com `DataSourceBeanCreationException`.
+Em `application-dev.yaml`, esses mesmos valores recebem **defaults de conveniência apenas para desenvolvimento local** (`jdbc:postgresql://localhost:5432/arenacode`, usuário/senha `arenacode`), que podem ser sobrescritos por `.env` local. Em `test`, o Testcontainers injeta a conexão real dinamicamente via `@ServiceConnection`, sem necessidade de configuração estática. Em `prod`, as três variáveis (`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`) são obrigatórias e não possuem default.
 
-**Esta exclusão é temporária.** Ela deve ser **removida** no commit em que o datasource real do PostgreSQL for configurado (`spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password` via `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`). A partir daí, `spring.jpa.hibernate.ddl-auto=validate` e `spring.flyway.enabled=true` voltam a ter efeito normalmente.
+### Pool de conexões (HikariCP)
+
+| Variável | Default (base) | Default (dev) | Descrição |
+|----------|-----------------|---------------|------------|
+| `DB_POOL_MAX_SIZE` | `10` | `5` | Tamanho máximo do pool de conexões. |
+| `DB_POOL_MIN_IDLE` | `2` | `1` | Número mínimo de conexões ociosas mantidas no pool. |
+| `DB_POOL_CONNECTION_TIMEOUT` | `30000` | `30000` | Tempo máximo (ms) de espera por uma conexão do pool. |
 
 ## Variáveis de ambiente
 
-### Obrigatórias atualmente
+### Obrigatórias agora (fora do profile dev)
 
-Nenhuma variável é estritamente obrigatória nesta etapa, pois o datasource ainda não está conectado (autoconfiguração desativada, ver seção acima). A aplicação roda com valores padrão em `dev`.
+| Variável | Descrição |
+|----------|------------|
+| `DATABASE_URL` | URL JDBC de conexão com o PostgreSQL (ex.: `jdbc:postgresql://host:5432/arenacode`). Obrigatória em `prod`; em `dev`, tem default local. |
+| `DATABASE_USERNAME` | Usuário do banco de dados. Obrigatória em `prod`; em `dev`, tem default local. |
+| `DATABASE_PASSWORD` | Senha do banco de dados. Obrigatória em `prod`; em `dev`, tem default local. |
+
+### Opcionais atualmente
 
 | Variável | Default | Descrição |
 |----------|---------|------------|
 | `SERVER_PORT` | `8080` | Porta HTTP do servidor embutido. |
 | `SPRING_PROFILES_ACTIVE` | `dev` | Profile ativo (`dev`, `test`, `prod`). |
-
-### Necessárias futuramente (quando o PostgreSQL for conectado)
-
-| Variável | Descrição |
-|----------|------------|
-| `DATABASE_URL` | URL JDBC de conexão com o PostgreSQL. |
-| `DATABASE_USERNAME` | Usuário do banco de dados. |
-| `DATABASE_PASSWORD` | Senha do banco de dados. |
+| `DB_POOL_MAX_SIZE` / `DB_POOL_MIN_IDLE` / `DB_POOL_CONNECTION_TIMEOUT` | ver tabela acima | Ajustes finos do pool HikariCP. |
 
 ### Necessárias futuramente (outras integrações previstas)
 
@@ -61,18 +73,16 @@ Todas as variáveis estão documentadas em `.env.example` na raiz do repositóri
 
 - **Nunca commitar o arquivo `.env`** ou qualquer arquivo com valores reais de credenciais. Ele está listado no `.gitignore`.
 - Apenas `.env.example` (sem valores) deve ser versionado.
-- Nenhum arquivo `application-*.yaml` deste repositório contém senhas, tokens ou URLs concretas de infraestrutura.
+- Os defaults de `application-dev.yaml` (`arenacode`/`arenacode`) são apenas conveniência local e nunca devem ser usados fora do ambiente de desenvolvimento do próprio desenvolvedor.
 - Em produção, os valores sensíveis devem ser injetados pelo ambiente de execução (variáveis de ambiente do sistema, secret manager, etc.), nunca por arquivo versionado.
 
 ## JPA e schema do banco
 
-- `spring.jpa.hibernate.ddl-auto` está fixado em **`validate`** em todos os profiles (a partir do momento em que a autoconfiguração de JPA for reativada).
+- `spring.jpa.hibernate.ddl-auto` está fixado em **`validate`** em todos os profiles.
 - O Hibernate **nunca** cria, atualiza ou recria tabelas automaticamente.
-- **Flyway** é a única fonte oficial de criação e evolução do schema do banco, através das migrations em `src/main/resources/db/migration/`.
-- `spring.flyway.enabled=true` garante que as migrations sejam aplicadas automaticamente na inicialização, quando existirem e quando a autoconfiguração do Flyway estiver ativa.
+- **Flyway** é a única fonte oficial de criação e evolução do schema do banco, através das migrations em `src/main/resources/db/migration/`. Ver `docs/database/migrations.md` para detalhes e convenções.
+- `spring.flyway.enabled=true` garante que as migrations sejam aplicadas automaticamente na inicialização.
 
-## Observações importantes
+## Testes de integração com Testcontainers
 
-- **Nenhum datasource está configurado ainda.** A conexão com o PostgreSQL será adicionada em uma etapa posterior, removendo a exclusão de autoconfiguração descrita acima.
-- **Nenhuma migration SQL existe ainda.** O diretório `src/main/resources/db/migration/` será populado quando o schema inicial for definido.
-- Os endpoints do Actuator expostos (`health`, `info`) são mínimos e não expõem detalhes sensíveis por padrão (`show-details: never` em `prod` e `test`).
+Os testes que exercitam o datasource real (`ArenacodeApplicationTests`, `BaselineMigrationIntegrationTest`) usam **Testcontainers** com `@ServiceConnection` para provisionar um PostgreSQL efêmero automaticamente, sem exigir instalação local do banco nem Docker Compose. Requer apenas Docker disponível na máquina/CI que executa `./gradlew test`.
