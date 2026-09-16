@@ -12,11 +12,24 @@ O backend utiliza profiles do Spring Boot para separar configurações por ambie
 
 O profile ativo é selecionado pela variável de ambiente `SPRING_PROFILES_ACTIVE`.
 
+## Exclusão temporária de autoconfiguração (IMPORTANTE)
+
+Como nenhum `spring.datasource.*` foi configurado ainda (o PostgreSQL será conectado em uma etapa futura), o `application.yaml` desativa temporariamente as seguintes autoconfigurações do Spring Boot, via `spring.autoconfigure.exclude`:
+
+- `org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration`
+- `org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration`
+- `org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration`
+- `org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration`
+
+**Motivo:** sem essa exclusão, o Spring Boot tenta criar automaticamente um bean `DataSource` na inicialização (pois `spring-boot-starter-data-jpa` e Flyway estão no classpath), o que faz o contexto da aplicação falhar ao subir — incluindo em testes (`ArenacodeApplicationTests#contextLoads`), com `DataSourceBeanCreationException`.
+
+**Esta exclusão é temporária.** Ela deve ser **removida** no commit em que o datasource real do PostgreSQL for configurado (`spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password` via `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`). A partir daí, `spring.jpa.hibernate.ddl-auto=validate` e `spring.flyway.enabled=true` voltam a ter efeito normalmente.
+
 ## Variáveis de ambiente
 
 ### Obrigatórias atualmente
 
-Nenhuma variável é estritamente obrigatória nesta etapa, pois o datasource ainda não está conectado. A aplicação roda com valores padrão em `dev`.
+Nenhuma variável é estritamente obrigatória nesta etapa, pois o datasource ainda não está conectado (autoconfiguração desativada, ver seção acima). A aplicação roda com valores padrão em `dev`.
 
 | Variável | Default | Descrição |
 |----------|---------|------------|
@@ -53,13 +66,13 @@ Todas as variáveis estão documentadas em `.env.example` na raiz do repositóri
 
 ## JPA e schema do banco
 
-- `spring.jpa.hibernate.ddl-auto` está fixado em **`validate`** em todos os profiles.
+- `spring.jpa.hibernate.ddl-auto` está fixado em **`validate`** em todos os profiles (a partir do momento em que a autoconfiguração de JPA for reativada).
 - O Hibernate **nunca** cria, atualiza ou recria tabelas automaticamente.
 - **Flyway** é a única fonte oficial de criação e evolução do schema do banco, através das migrations em `src/main/resources/db/migration/`.
-- `spring.flyway.enabled=true` garante que as migrations sejam aplicadas automaticamente na inicialização, quando existirem.
+- `spring.flyway.enabled=true` garante que as migrations sejam aplicadas automaticamente na inicialização, quando existirem e quando a autoconfiguração do Flyway estiver ativa.
 
 ## Observações importantes
 
-- **Nenhum datasource está configurado ainda.** A conexão com o PostgreSQL será adicionada em uma etapa posterior.
+- **Nenhum datasource está configurado ainda.** A conexão com o PostgreSQL será adicionada em uma etapa posterior, removendo a exclusão de autoconfiguração descrita acima.
 - **Nenhuma migration SQL existe ainda.** O diretório `src/main/resources/db/migration/` será populado quando o schema inicial for definido.
 - Os endpoints do Actuator expostos (`health`, `info`) são mínimos e não expõem detalhes sensíveis por padrão (`show-details: never` em `prod` e `test`).
