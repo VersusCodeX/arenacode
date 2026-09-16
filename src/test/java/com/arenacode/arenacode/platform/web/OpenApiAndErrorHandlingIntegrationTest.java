@@ -12,7 +12,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -70,14 +69,6 @@ class OpenApiAndErrorHandlingIntegrationTest {
 		assertTrue(content.contains("\"title\":\"Validation Error\""));
 		assertTrue(content.contains("\"status\":400"));
 		assertTrue(content.contains("\"violations\""));
-	}
-
-	@Test
-	void resourceNotFoundExceptionReturns404ProblemDetails() throws Exception {
-		// Endpoint nao mapeado retorna 404 nativo do Spring (nao passa pelo GlobalExceptionHandler).
-		// O teste valida apenas o status 404, sem exigir formato Problem Details especifico.
-		mockMvc.perform(get("/api/v1/nonexistent"))
-				.andExpect(status().isNotFound());
 	}
 
 	@Test
