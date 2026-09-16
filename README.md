@@ -1,5 +1,7 @@
 # ArenaCode Backend
 
+[![Backend CI](https://github.com/VersusCodeX/arenacode/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/VersusCodeX/arenacode/actions/workflows/backend-ci.yml)
+
 Backend Java do ArenaCode, uma plataforma competitiva de programacao.
 
 ## Objetivo
@@ -84,6 +86,17 @@ arenacode-backend/
 
 Relatorios em `build/reports/`. Detalhes em [docs/operations/code-quality.md](docs/operations/code-quality.md).
 
+## CI/CD
+
+Todo pull request para `main` executa automaticamente o pipeline de CI:
+
+- Formatacao (Spotless)
+- Testes unitarios e de integracao
+- Analise estatica (SpotBugs)
+- Build do JAR executavel
+
+Badge de status no topo deste README. Detalhes em [docs/operations/ci.md](docs/operations/ci.md).
+
 ## Health checks
 
 - Endpoint tecnico simples: `GET /api/v1/health`
@@ -113,11 +126,12 @@ Detalhes em [docs/api/openapi.md](docs/api/openapi.md).
 - [Configuracao de ambiente](docs/operations/configuration.md)
 - [Desenvolvimento local](docs/operations/local-development.md)
 - [Qualidade de codigo](docs/operations/code-quality.md)
+- [CI/CD](docs/operations/ci.md)
 - [Demo](docs/demo/)
 
 ## Status
 
-**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados, ferramentas de qualidade de codigo (Spotless, SpotBugs) configuradas. Ainda sem funcionalidades de dominio.
+**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados, ferramentas de qualidade de codigo (Spotless, SpotBugs) configuradas, pipeline de CI no GitHub Actions. Ainda sem funcionalidades de dominio.
 
 ## Licenca
 
