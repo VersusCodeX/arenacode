@@ -83,7 +83,6 @@ tasks.spotbugsMain {
 	reports {
 		create("html") {
 			outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main/spotbugs.html"))
-			stylesheet = "high"
 		}
 	}
 }
