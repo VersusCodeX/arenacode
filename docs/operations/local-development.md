@@ -1,81 +1,211 @@
-# Desenvolvimento Local - ArenaCode Backend
+# Desenvolvimento local
 
-## Endpoint tecnico vs. Actuator
+Este guia permite iniciar o backend ArenaCode localmente a partir de um clone limpo do repositório. O épico Fundação entrega infraestrutura, migrations, health checks, OpenAPI, qualidade e CI; autenticação, problemas, partidas, submissões/julgamento e sandbox ainda pertencem aos próximos épicos.
 
-O backend expoe dois mecanismos distintos de verificacao de saude, com propositos diferentes:
+## Pré-requisitos
 
-| Aspecto | Endpoint tecnico (`/api/v1/health`) | Spring Boot Actuator (`/actuator/health`) |
-|---------|--------------------------------------|---------------------------------------------|
-| Objetivo | Verificacao simples de que a aplicacao esta viva, para consumidores externos leves. | Verificacao completa de saude, incluindo dependencias (banco, disco, etc.), usada por orquestradores. |
-| Detalhes expostos | Apenas `application`, `status` e `timestamp`. Nenhum detalhe de infraestrutura. | Estado agregado por padrao (`show-details: never`); componentes individuais (banco, disco) nao sao expostos publicamente. |
-| Formato | DTO customizado (`HealthCheckResponse`). | Formato padrao do Spring Boot Actuator. |
-| Substitui o outro? | Nao. E um endpoint complementar, mais simples. | Nao. Continua sendo a fonte oficial e completa de health checks. |
-| Uso recomendado | Smoke tests simples, scripts, verificacoes rapidas. | Probes de liveness/readiness em orquestradores, monitoramento operacional. |
+Instale ou tenha acesso a:
 
-## Exemplos de uso (curl)
+- JDK 21.
+- Docker Engine em execução.
+- Docker Compose (`docker compose`).
+- Git.
+- IntelliJ IDEA ou VS Code, opcionalmente com suporte a Java/Gradle.
+- DBeaver, opcional, para inspecionar o PostgreSQL.
+- Bruno ou Postman, opcionais, para testar endpoints HTTP.
 
-### Endpoint tecnico
-
-```bash
-curl http://localhost:8080/api/v1/health
-```
-
-Resposta esperada:
-
-```json
-{
-  "application": "arenacode",
-  "status": "UP",
-  "timestamp": "2026-09-16T21:48:00.123456Z"
-}
-```
-
-### Actuator - saude geral
+Verifique o ambiente:
 
 ```bash
-curl http://localhost:8080/actuator/health
+java -version
+docker --version
+docker compose version
+git --version
 ```
 
-Retorna `200 OK` com `{"status":"UP"}` quando a aplicacao e suas dependencias essenciais (como o PostgreSQL) estao disponiveis.
+## Início rápido
 
-### Actuator - liveness
+1. Clone o repositório e entre no diretório:
 
 ```bash
-curl http://localhost:8080/actuator/health/liveness
+git clone git@github.com:VersusCodeX/arenacode.git
+cd arenacode
 ```
 
-### Actuator - readiness
+2. Crie o arquivo de ambiente local a partir do exemplo:
 
 ```bash
-curl http://localhost:8080/actuator/health/readiness
+cp .env.example .env
 ```
 
-## O que significam liveness e readiness
+3. Inicie apenas o PostgreSQL:
 
-- **Liveness** (`/actuator/health/liveness`): indica se o processo da aplicacao esta em execucao e nao travado (deadlock, loop infinito, etc.). Se ficar `DOWN`, o orquestrador (ex.: Kubernetes) deve reiniciar o container/processo. Nao depende do banco de dados — reflete apenas o estado interno (`livenessState`) da JVM/Spring.
-- **Readiness** (`/actuator/health/readiness`): indica se a aplicacao esta pronta para receber trafego. Inclui o estado interno (`readinessState`) **e** a disponibilidade do PostgreSQL (indicador `db`). Se o banco cair, a readiness fica `DOWN` e o orquestrador deve parar de rotear requisicoes para esta instancia, sem necessariamente reinicia-la.
+```bash
+docker compose up -d postgres
+docker compose ps
+```
 
-Essa distincao evita reinicios inuteis quando o problema e uma dependencia externa (banco fora do ar), e nao a aplicacao em si.
-
-## Endpoints do Actuator expostos
-
-Apenas os seguintes endpoints estao habilitados (`management.endpoints.web.exposure.include`):
-
-- `health` (com grupos `liveness` e `readiness`)
-- `info`
-
-**Nao estao expostos**: `env`, `beans`, `configprops`, `heapdump`, `threaddump`, `loggers`, `metrics` ou `prometheus`. Metricas via Prometheus poderao ser habilitadas em um commit futuro, quando a dependencia Micrometer/Prometheus for adicionada explicitamente.
-
-## Comandos de validacao
+4. Execute os testes:
 
 ```bash
 ./gradlew test
-./gradlew bootRun
-
-curl http://localhost:8080/api/v1/health
-curl http://localhost:8080/actuator/health
-curl http://localhost:8080/actuator/health/liveness
-curl http://localhost:8080/actuator/health/readiness
 ```
 
-Os testes de integracao (`HealthEndpointsIntegrationTest`) usam Testcontainers para validar esses mesmos endpoints com um PostgreSQL real, sem exigir instalacao manual do banco.
+5. Inicie a aplicação:
+
+```bash
+./gradlew bootRun
+```
+
+6. Em outro terminal, valide os endpoints:
+
+```bash
+curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/actuator/health
+```
+
+Abra também o Swagger UI em <http://localhost:8080/swagger-ui.html>.
+
+## Encerramento
+
+Pare a aplicação iniciada com `bootRun` usando `Ctrl+C`.
+
+Para parar containers e preservar os dados:
+
+```bash
+docker compose down
+```
+
+Para remover containers e volumes/dados locais:
+
+```bash
+docker compose down -v
+```
+
+Use `down -v` somente quando quiser reinicializar completamente o banco local.
+
+## DBeaver
+
+Com o PostgreSQL iniciado, crie uma conexão PostgreSQL usando os valores definidos no `.env` e no `docker-compose.yml`. Em uma configuração local comum:
+
+- Host: `localhost`
+- Porta: `5432`
+- Database, usuário e senha: valores do `.env`
+
+No DBeaver:
+
+1. Abra **Database > New Database Connection > PostgreSQL**.
+2. Informe os dados da configuração local.
+3. Clique em **Test Connection**.
+4. Expanda o database e os schemas para visualizar tabelas e a tabela de histórico do Flyway.
+
+O DBeaver deve ser usado para inspeção e consulta. Não crie mudanças permanentes de schema manualmente: toda mudança deve ser uma migration Flyway versionada.
+
+## Validar Flyway
+
+O Flyway executa migrations pendentes durante a inicialização da aplicação.
+
+1. Inicie o PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+2. Execute:
+
+```bash
+./gradlew bootRun
+```
+
+3. Confirme no log que o Flyway concluiu sem erros.
+4. Consulte `GET /actuator/health`.
+5. Opcionalmente, no DBeaver, consulte a tabela `flyway_schema_history`.
+
+Após `docker compose down -v`, o próximo `bootRun` cria novamente o banco local e reaplica as migrations.
+
+## Qualidade e testes
+
+Execute os checks usados pelo CI:
+
+```bash
+./gradlew spotlessCheck
+./gradlew spotbugsMain
+./gradlew test
+./gradlew check
+```
+
+Caso o Spotless aponte formatação inválida, corrija automaticamente:
+
+```bash
+./gradlew spotlessApply
+```
+
+Os relatórios ficam em `build/reports/`.
+
+## Troubleshooting
+
+### Porta 5432 ocupada
+
+Verifique qual processo ou container usa a porta:
+
+```bash
+ss -ltnp | grep 5432
+docker ps
+```
+
+Pare o serviço concorrente ou ajuste sua configuração local.
+
+### Docker sem permissão
+
+Confirme que o Docker está em execução e que seu usuário pode acessar o socket. Em Linux:
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+Saia da sessão e entre novamente após executar o comando. Evite usar `sudo` como solução permanente para Gradle ou Docker.
+
+### Java errado
+
+Confirme as versões:
+
+```bash
+java -version
+./gradlew -version
+```
+
+O projeto requer JDK 21. Ajuste `JAVA_HOME` ou a SDK configurada na IDE.
+
+### Flyway falhando
+
+Leia a primeira mensagem de erro do Flyway. Confirme que o PostgreSQL está disponível, que `.env` corresponde à configuração local e que não houve alterações manuais no schema.
+
+Para reinicializar dados locais descartáveis:
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+./gradlew bootRun
+```
+
+### Banco indisponível
+
+Verifique estado e logs:
+
+```bash
+docker compose ps
+docker compose logs postgres
+```
+
+Confirme host, porta, database, usuário e senha antes de reiniciar a aplicação.
+
+### Gradle Wrapper sem permissão
+
+Em sistemas Unix:
+
+```bash
+chmod +x gradlew
+./gradlew --version
+```
+
+No Windows, use `gradlew.bat`.

@@ -2,137 +2,107 @@
 
 [![Backend CI](https://github.com/VersusCodeX/arenacode/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/VersusCodeX/arenacode/actions/workflows/backend-ci.yml)
 
-Backend Java do ArenaCode, uma plataforma competitiva de programacao.
+Backend Java do ArenaCode, uma plataforma competitiva de programação. Este repositório contém somente o backend; o frontend React/TypeScript será mantido em repositório separado.
 
-## Objetivo
+## Estado atual
 
-Prover API REST para submissoes de codigo, julgamento automatico, ranking, matchmaking e recomendacao de problemas.
+O épico **Fundação** está concluído: estrutura do backend, PostgreSQL/Flyway, validação de schema via JPA, health checks, OpenAPI, ferramentas de qualidade e CI estão documentados e configurados.
 
-## Aviso importante
-
-Este repositorio contem **apenas o backend**. O frontend React/TypeScript sera desenvolvido em outro repositorio.
+Autenticação, problemas, partidas, matchmaking, ranking, submissões, julgamento de código, worker/sandbox e frontend pertencem aos **próximos épicos**. Este README não promete essas funcionalidades como disponíveis agora.
 
 ## Tecnologias
 
 - Java 21
 - Spring Boot 4.1.1
-- Gradle (Kotlin DSL)
+- Gradle com Kotlin DSL e Gradle Wrapper
 - PostgreSQL
-- Flyway (migrations)
-- JPA/Hibernate (ddl-auto=validate)
-- OpenAPI 3.0 (Springdoc)
+- Flyway
+- JPA/Hibernate com `ddl-auto=validate`
+- OpenAPI 3.0 com Springdoc
+- Spotless e SpotBugs
+- GitHub Actions
 
-## Pre-requisitos
+## Como rodar
 
-- JDK 21+
-- Gradle 8+
-- PostgreSQL 15+ (ou Docker apenas para rodar os testes de integracao via Testcontainers)
-- DBeaver (opcional, para inspecao do banco)
-
-## Estrutura de diretorios
-
-```
-arenacode-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/com/arenacode/arenacode/
-│   │   └── resources/
-│   │       └── db/migration/
-│   └── test/
-├── docs/
-│   ├── architecture/
-│   │   ├── adr/
-│   │   └── conventions.md
-│   ├── database/
-│   ├── api/
-│   ├── operations/
-│   └── demo/
-├── build.gradle.kts
-├── .env.example
-└── README.md
-```
-
-## Comandos Gradle
+Pré-requisitos: JDK 21, Docker Engine, Docker Compose e Git. IntelliJ IDEA ou VS Code são recomendados; DBeaver e Bruno/Postman são opcionais.
 
 ```bash
-# Build
-./gradlew build
-
-# Testes
+git clone git@github.com:VersusCodeX/arenacode.git
+cd arenacode
+cp .env.example .env
+docker compose up -d postgres
 ./gradlew test
-
-# Executar
 ./gradlew bootRun
-
-# Limpar
-./gradlew clean
 ```
 
-## Qualidade de codigo
+Com a aplicação em execução:
+
+- Health técnico: <http://localhost:8080/api/v1/health>
+- Actuator: <http://localhost:8080/actuator/health>
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- OpenAPI JSON: <http://localhost:8080/v3/api-docs>
+
+Para encerrar:
 
 ```bash
-# Formatar codigo automaticamente
-./gradlew spotlessApply
-
-# Verificar formatacao (sem modificar arquivos)
-./gradlew spotlessCheck
-
-# Analise estatica de bugs
-./gradlew spotbugsMain
-
-# Verificacao completa (spotlessCheck + spotbugsMain + test + ...)
-./gradlew check
+docker compose down
+# ou, para remover também os dados locais
+docker compose down -v
 ```
 
-Relatorios em `build/reports/`. Detalhes em [docs/operations/code-quality.md](docs/operations/code-quality.md).
+Leia o guia completo em [Desenvolvimento local](docs/operations/local-development.md).
 
-## CI/CD
+## Qualidade
 
-Todo pull request para `main` executa automaticamente o pipeline de CI:
+```bash
+./gradlew spotlessApply
+./gradlew spotlessCheck
+./gradlew spotbugsMain
+./gradlew test
+./gradlew check
+./gradlew bootJar
+```
 
-- Formatacao (Spotless)
-- Testes unitarios e de integracao
-- Analise estatica (SpotBugs)
-- Build do JAR executavel
+Os relatórios são gerados em `build/reports/`. Veja [Qualidade de código](docs/operations/code-quality.md).
 
-Badge de status no topo deste README. Detalhes em [docs/operations/ci.md](docs/operations/ci.md).
+## CI
 
-## Health checks
+Todo push para `main` e todo pull request direcionado a `main` executa o workflow **Backend CI**. Todo pull request deve passar os checks de formatação, testes, análise estática e geração do JAR antes de ser integrado.
 
-- Endpoint tecnico simples: `GET /api/v1/health`
-- Spring Boot Actuator: `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`
+Veja [CI/CD](docs/operations/ci.md).
 
-Detalhes completos em [docs/operations/local-development.md](docs/operations/local-development.md).
+## Documentação
 
-## OpenAPI / Swagger
+### Arquitetura e decisões
 
-Documentacao da API disponivel em:
+- [Convenções arquiteturais](docs/architecture/conventions.md)
+- [ADR 0001 — Monólito modular primeiro](docs/architecture/adr/0001-modular-monolith-first.md)
+- [ADR 0002 — Flyway como fonte de verdade do schema](docs/architecture/adr/0002-flyway-schema-source-of-truth.md)
+- [ADR 0003 — PostgreSQL como banco transacional](docs/architecture/adr/0003-postgresql-transactional-database.md)
+- [ADR 0004 — Frontend em repositório separado](docs/architecture/adr/0004-separate-frontend-repository.md)
+- [ADR 0005 — Fronteira de sandbox para código não confiável](docs/architecture/adr/0005-untrusted-code-sandbox-boundary.md)
+- [Arquitetura C4](docs/arenacode-c4-architecture.md)
+- [Diagrama de classes](docs/arenacode-class-diagram.md)
 
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
-- **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
+### Operação e integração
 
-Detalhes em [docs/api/openapi.md](docs/api/openapi.md).
-
-## Documentacao
-
-- [Arquitetura e convencoes](docs/architecture/conventions.md)
-- [Decisoes de arquitetura (ADRs)](docs/architecture/adr/)
-- [Modelo de dados](docs/database/)
-- [Migrations](docs/database/migrations.md)
-- [API](docs/api/)
-- [OpenAPI](docs/api/openapi.md)
-- [Operacoes](docs/operations/)
-- [Configuracao de ambiente](docs/operations/configuration.md)
 - [Desenvolvimento local](docs/operations/local-development.md)
-- [Qualidade de codigo](docs/operations/code-quality.md)
+- [Configuração de ambiente](docs/operations/configuration.md)
+- [Qualidade de código](docs/operations/code-quality.md)
 - [CI/CD](docs/operations/ci.md)
-- [Demo](docs/demo/)
+- [Migrations](docs/database/migrations.md)
+- [API e OpenAPI](docs/api/openapi.md)
+- [Roteiro de demonstração da Fundação](docs/demo/foundation-demo.md)
+- [Requisitos do projeto](docs/requirements.md)
 
-## Status
+## Roadmap resumido
 
-**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados, ferramentas de qualidade de codigo (Spotless, SpotBugs) configuradas, pipeline de CI no GitHub Actions. Ainda sem funcionalidades de dominio.
+1. **Fundação — concluído:** ambiente local, PostgreSQL/Flyway, validação JPA, observabilidade técnica, OpenAPI, qualidade e CI.
+2. **Identidade e acesso — próximo:** autenticação, autorização e gestão de perfis.
+3. **Domínio competitivo:** problemas, submissões, julgamento, ranking, partidas e matchmaking.
+4. **Execução segura:** worker e sandbox isolados para código não confiável.
+5. **Experiência e inteligência:** frontend React/TypeScript, recursos em tempo real e recomendações/IA quando os requisitos estiverem definidos.
 
-## Licenca
+## Licença
 
-Proprietario. Todos os direitos reservados.
+Proprietário. Todos os direitos reservados.
