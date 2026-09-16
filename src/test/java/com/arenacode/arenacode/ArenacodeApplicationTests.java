@@ -11,12 +11,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @Testcontainers
 class ArenacodeApplicationTests {
 
-	@Container
-	@ServiceConnection
-	static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+  @Container @ServiceConnection
+  static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
-	@Test
-	void contextLoads() {
-	}
-
+  @Test
+  void contextLoads() {}
 }
