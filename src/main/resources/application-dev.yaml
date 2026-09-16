@@ -1,0 +1,26 @@
+# Perfil de desenvolvimento local.
+# Nenhuma credencial real deve ser inserida aqui.
+# Todas as configurações sensíveis devem vir de variáveis de ambiente (.env local, nunca commitado).
+
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    com.arenacode: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG

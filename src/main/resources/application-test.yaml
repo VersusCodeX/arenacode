@@ -1,0 +1,25 @@
+# Perfil de testes automatizados.
+# Nunca deve apontar para banco de produção.
+# Preparado para uso futuro com Testcontainers (nenhum datasource configurado ainda).
+
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.arenacode: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
