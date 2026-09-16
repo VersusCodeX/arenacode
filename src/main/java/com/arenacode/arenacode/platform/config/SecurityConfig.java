@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Configuracao minima de seguranca para endpoints de infraestrutura.
- * Libera acesso anonimo ao endpoint tecnico de saude (/api/v1/health),
+ * Libera acesso anonimo aos endpoints tecnicos (/api/v1/**),
  * aos endpoints do Actuator (health, info) e a documentacao OpenAPI/Swagger,
  * mantendo autenticacao para qualquer outra rota futura.
  */
@@ -21,7 +21,7 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
-						"/api/v1/health",
+						"/api/v1/**",
 						"/actuator/**",
 						"/v3/api-docs",
 						"/v3/api-docs/**",
