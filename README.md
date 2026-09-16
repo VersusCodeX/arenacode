@@ -66,6 +66,24 @@ arenacode-backend/
 ./gradlew clean
 ```
 
+## Qualidade de codigo
+
+```bash
+# Formatar codigo automaticamente
+./gradlew spotlessApply
+
+# Verificar formatacao (sem modificar arquivos)
+./gradlew spotlessCheck
+
+# Analise estatica de bugs
+./gradlew spotbugsMain
+
+# Verificacao completa (spotlessCheck + spotbugsMain + test + ...)
+./gradlew check
+```
+
+Relatorios em `build/reports/`. Detalhes em [docs/operations/code-quality.md](docs/operations/code-quality.md).
+
 ## Health checks
 
 - Endpoint tecnico simples: `GET /api/v1/health`
@@ -94,11 +112,12 @@ Detalhes em [docs/api/openapi.md](docs/api/openapi.md).
 - [Operacoes](docs/operations/)
 - [Configuracao de ambiente](docs/operations/configuration.md)
 - [Desenvolvimento local](docs/operations/local-development.md)
+- [Qualidade de codigo](docs/operations/code-quality.md)
 - [Demo](docs/demo/)
 
 ## Status
 
-**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados. Ainda sem funcionalidades de dominio.
+**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados, ferramentas de qualidade de codigo (Spotless, SpotBugs) configuradas. Ainda sem funcionalidades de dominio.
 
 ## Licenca
 

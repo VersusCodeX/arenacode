@@ -2,6 +2,8 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("com.diffplug.spotless") version "8.10.1"
+	id("com.github.spotbugs") version "6.4.1"
 }
 
 group = "com.arenacode"
@@ -60,4 +62,25 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+spotless {
+	java {
+		googleJavaFormat()
+		target("src/main/java/**/*.java", "src/test/java/**/*.java")
+	}
+}
+
+spotbugs {
+	spotbugsTest.enabled = false
+	reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+}
+
+tasks.spotbugsMain {
+	reports {
+		create("html") {
+			outputLocation.set(file("$buildDir/reports/spotbugs/main/spotbugs.html"))
+			setStylesheets("high")
+		}
+	}
 }
