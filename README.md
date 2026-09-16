@@ -1,14 +1,14 @@
 # ArenaCode Backend
 
-Backend Java do ArenaCode, uma plataforma competitiva de programação.
+Backend Java do ArenaCode, uma plataforma competitiva de programacao.
 
 ## Objetivo
 
-Prover API REST para submissões de código, julgamento automático, ranking, matchmaking e recomendação de problemas.
+Prover API REST para submissoes de codigo, julgamento automatico, ranking, matchmaking e recomendacao de problemas.
 
 ## Aviso importante
 
-Este repositório contém **apenas o backend**. O frontend React/TypeScript será desenvolvido em outro repositório.
+Este repositorio contem **apenas o backend**. O frontend React/TypeScript sera desenvolvido em outro repositorio.
 
 ## Tecnologias
 
@@ -18,15 +18,16 @@ Este repositório contém **apenas o backend**. O frontend React/TypeScript ser�
 - PostgreSQL
 - Flyway (migrations)
 - JPA/Hibernate (ddl-auto=validate)
+- OpenAPI 3.0 (Springdoc)
 
-## Pré-requisitos
+## Pre-requisitos
 
 - JDK 21+
 - Gradle 8+
-- PostgreSQL 15+ (ou Docker apenas para rodar os testes de integração via Testcontainers)
-- DBeaver (opcional, para inspeção do banco)
+- PostgreSQL 15+ (ou Docker apenas para rodar os testes de integracao via Testcontainers)
+- DBeaver (opcional, para inspecao do banco)
 
-## Estrutura de diretórios
+## Estrutura de diretorios
 
 ```
 arenacode-backend/
@@ -67,31 +68,38 @@ arenacode-backend/
 
 ## Health checks
 
-- Endpoint técnico simples: `GET /api/v1/health`
+- Endpoint tecnico simples: `GET /api/v1/health`
 - Spring Boot Actuator: `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`
 
 Detalhes completos em [docs/operations/local-development.md](docs/operations/local-development.md).
 
 ## OpenAPI / Swagger
 
-Ainda **não configurado**. O Springdoc OpenAPI será adicionado em um próximo commit, junto com os primeiros endpoints de domínio.
+Documentacao da API disponivel em:
 
-## Documentação
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+- **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
 
-- [Arquitetura e convenções](docs/architecture/conventions.md)
-- [Decisões de arquitetura (ADRs)](docs/architecture/adr/)
+Detalhes em [docs/api/openapi.md](docs/api/openapi.md).
+
+## Documentacao
+
+- [Arquitetura e convencoes](docs/architecture/conventions.md)
+- [Decisoes de arquitetura (ADRs)](docs/architecture/adr/)
 - [Modelo de dados](docs/database/)
 - [Migrations](docs/database/migrations.md)
 - [API](docs/api/)
-- [Operações](docs/operations/)
-- [Configuração de ambiente](docs/operations/configuration.md)
+- [OpenAPI](docs/api/openapi.md)
+- [Operacoes](docs/operations/)
+- [Configuracao de ambiente](docs/operations/configuration.md)
 - [Desenvolvimento local](docs/operations/local-development.md)
 - [Demo](docs/demo/)
 
 ## Status
 
-**Fundação** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (técnico + Actuator) implementados. Ainda sem funcionalidades de domínio.
+**Fundacao** - Estrutura inicial organizada, PostgreSQL/Flyway configurados com migration baseline, health checks (tecnico + Actuator) implementados, OpenAPI e tratamento de erros padronizados. Ainda sem funcionalidades de dominio.
 
-## Licença
+## Licenca
 
-Proprietário. Todos os direitos reservados.
+Proprietario. Todos os direitos reservados.
