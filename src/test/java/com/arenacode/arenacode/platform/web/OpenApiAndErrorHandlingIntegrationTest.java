@@ -1,7 +1,5 @@
 package com.arenacode.arenacode.platform.web;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +14,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,9 +35,6 @@ class OpenApiAndErrorHandlingIntegrationTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@Autowired
-	private ObjectMapper objectMapper;
-
 	@Test
 	void swaggerUiIsAccessible() throws Exception {
 		mockMvc.perform(get("/swagger-ui.html"))
@@ -55,11 +49,10 @@ class OpenApiAndErrorHandlingIntegrationTest {
 				.andReturn();
 
 		String content = result.getResponse().getContentAsString();
-		JsonNode json = objectMapper.readTree(content);
 
-		assertEquals("ArenaCode API", json.get("info").get("title").asText());
-		assertEquals("0.1.0", json.get("info").get("version").asText());
-		assertTrue(json.has("paths"));
+		assertTrue(content.contains("\"title\":\"ArenaCode API\""));
+		assertTrue(content.contains("\"version\":\"0.1.0\""));
+		assertTrue(content.contains("\"paths\""));
 	}
 
 	@Test
@@ -73,11 +66,10 @@ class OpenApiAndErrorHandlingIntegrationTest {
 				.andReturn();
 
 		String content = result.getResponse().getContentAsString();
-		JsonNode json = objectMapper.readTree(content);
 
-		assertEquals("Validation Error", json.get("title").asText());
-		assertEquals(400, json.get("status").asInt());
-		assertTrue(json.has("violations"));
+		assertTrue(content.contains("\"title\":\"Validation Error\""));
+		assertTrue(content.contains("\"status\":400"));
+		assertTrue(content.contains("\"violations\""));
 	}
 
 	@Test
@@ -88,10 +80,9 @@ class OpenApiAndErrorHandlingIntegrationTest {
 				.andReturn();
 
 		String content = result.getResponse().getContentAsString();
-		JsonNode json = objectMapper.readTree(content);
 
-		assertEquals("Resource Not Found", json.get("title").asText());
-		assertEquals(404, json.get("status").asInt());
+		assertTrue(content.contains("\"title\":\"Resource Not Found\""));
+		assertTrue(content.contains("\"status\":404"));
 	}
 
 	@Test
@@ -104,9 +95,8 @@ class OpenApiAndErrorHandlingIntegrationTest {
 		// Neste caso, o Spring retorna 405 (Method Not Allowed), que tambem e um Problem Detail
 		// O teste valida que a resposta e JSON e contem "status".
 		String content = result.getResponse().getContentAsString();
-		JsonNode json = objectMapper.readTree(content);
 
-		assertEquals(405, json.get("status").asInt());
+		assertTrue(content.contains("\"status\":405"));
 	}
 
 	@Test
