@@ -1,98 +1,120 @@
 package com.arenacode.arenacode.identity.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
-import org.hibernate.annotations.UuidGenerator;
-
 @Entity
 @Table(name = "users")
 public class User {
 
-    @Id
-    @GeneratedValue
-    @UuidGenerator
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(columnDefinition = "uuid DEFAULT gen_random_uuid()")
+  private UUID id;
 
-    private String email;
-    private String passwordHash;
-    private String displayName;
-    private UserStatus status;
-    private boolean guest;
-    private ProgrammingLanguage preferredLanguage;
-    private Instant createdAt;
+  @Column(columnDefinition = "CITEXT")
+  private String email;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
+  @Column(name = "password_hash", length = 255)
+  private String passwordHash;
 
-    protected User() {
-    }
+  @Column(name = "display_name", nullable = false, length = 80)
+  private String displayName;
 
-    public User(String displayName, UserStatus status, boolean guest) {
-        this.displayName = displayName;
-        this.status = status;
-        this.guest = guest;
-        this.createdAt = Instant.now();
-    }
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private UserStatus status;
 
-    public UUID getId() {
-        return id;
-    }
+  @Column(name = "is_guest", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+  private boolean guest;
 
-    public String getEmail() {
-        return email;
-    }
+  @Column(name = "current_rating", nullable = false, columnDefinition = "INTEGER DEFAULT 1000")
+  private int currentRating;
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+  @Enumerated(EnumType.STRING)
+  @Column(name = "preferred_language", nullable = false, length = 30,
+      columnDefinition = "VARCHAR(30) DEFAULT 'JAVA_21'")
+  private ProgrammingLanguage preferredLanguage;
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
+  @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
+  private Instant createdAt;
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
+  @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
+  private Instant updatedAt;
 
-    public String getDisplayName() {
-        return displayName;
-    }
+  @Column(name = "deleted_at", columnDefinition = "TIMESTAMPTZ")
+  private Instant deletedAt;
 
-    public UserStatus getStatus() {
-        return status;
-    }
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "user_roles",
+      joinColumns = @JoinColumn(name = "user_id"),
+      inverseJoinColumns = @JoinColumn(name = "role_id"))
+  private Set<Role> roles = new HashSet<>();
 
-    public boolean isGuest() {
-        return guest;
-    }
+  protected User() {}
 
-    public ProgrammingLanguage getPreferredLanguage() {
-        return preferredLanguage;
-    }
+  public User(String displayName, UserStatus status, boolean guest) {
+    this.displayName = displayName;
+    this.status = status;
+    this.guest = guest;
+    this.currentRating = 1000;
+    this.preferredLanguage = ProgrammingLanguage.JAVA_21;
+  }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+  @PrePersist
+  void onCreate() {
+    Instant now = Instant.now();
+    if (createdAt == null) createdAt = now;
+    if (updatedAt == null) updatedAt = now;
+  }
 
-    public Set<Role> getRoles() {
-        return roles;
-    }
+  @PreUpdate
+  void onUpdate() {
+    updatedAt = Instant.now();
+  }
 
-    public void addRole(Role role) {
-        roles.add(role);
-    }
+  public UUID getId() { return id; }
+  public void setId(UUID id) { this.id = id; }
+  public String getEmail() { return email; }
+  public void setEmail(String email) { this.email = email; }
+  public String getPasswordHash() { return passwordHash; }
+  public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+  public String getDisplayName() { return displayName; }
+  public void setDisplayName(String displayName) { this.displayName = displayName; }
+  public UserStatus getStatus() { return status; }
+  public void setStatus(UserStatus status) { this.status = status; }
+  public boolean isGuest() { return guest; }
+  public void setGuest(boolean guest) { this.guest = guest; }
+  public int getCurrentRating() { return currentRating; }
+  public void setCurrentRating(int currentRating) { this.currentRating = currentRating; }
+  public ProgrammingLanguage getPreferredLanguage() { return preferredLanguage; }
+  public void setPreferredLanguage(ProgrammingLanguage preferredLanguage) { this.preferredLanguage = preferredLanguage; }
+  public Instant getCreatedAt() { return createdAt; }
+  public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+  public Instant getUpdatedAt() { return updatedAt; }
+  public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+  public Instant getDeletedAt() { return deletedAt; }
+  public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
+  public Set<Role> getRoles() { return roles; }
+  public void setRoles(Set<Role> roles) { this.roles = new HashSet<>(roles); }
+  public void addRole(Role role) { roles.add(role); }
+  public boolean isActive() { return status == UserStatus.ACTIVE; }
+  public boolean canAuthenticate() { return isActive() && !guest && email != null; }
+  public boolean hasRole(String roleCode) { return roles.stream().anyMatch(role -> role.getCode().equalsIgnoreCase(roleCode)); }
 }
