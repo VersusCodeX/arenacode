@@ -50,6 +50,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.testcontainers:postgresql:1.19.8")
     testImplementation("org.testcontainers:junit-jupiter:1.19.8")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 application {
