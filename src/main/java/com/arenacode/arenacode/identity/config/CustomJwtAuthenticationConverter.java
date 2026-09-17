@@ -4,24 +4,29 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CustomJwtAuthenticationConverter extends JwtAuthenticationConverter {
+public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthenticationToken> {
 
     @Override
-    protected Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
+    public JwtAuthenticationToken convert(Jwt jwt) {
         @SuppressWarnings("unchecked")
         Set<String> roles = (Set<String>) jwt.getClaimAsMap("roles").keySet();
-        if (roles == null) {
-            return new ArrayList<>();
+        Collection<GrantedAuthority> authorities;
+        if (roles == null || roles.isEmpty()) {
+            authorities = new ArrayList<>();
+        } else {
+            authorities = roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+                .collect(Collectors.toList());
         }
-        return roles.stream()
-            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-            .collect(Collectors.toList());
+        String subject = jwt.getSubject();
+        return new JwtAuthenticationToken(jwt, authorities, subject);
     }
 }

@@ -16,10 +16,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSelector;
-import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.nimbusds.jose.util.Base64;
+import org.springframework.security.core.context.SecurityContext;
 
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
@@ -49,14 +47,12 @@ public class JwtConfig {
     @Bean
     public JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
         JWK jwk = new com.nimbusds.jose.jwk.OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build();
-        var jwkSource = new ImmutableSecret<>(jwk);
+        var jwkSource = new ImmutableSecret<SecurityContext>(jwk);
         return new NimbusJwtEncoder(jwkSource);
     }
 
     @Bean
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
-        JWK jwk = new com.nimbusds.jose.jwk.OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build();
-        var jwkSource = new ImmutableSecret<>(jwk);
         return NimbusJwtDecoder.withSecretKey(jwtSecretKey).build();
     }
 
