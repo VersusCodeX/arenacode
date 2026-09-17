@@ -1,8 +1,8 @@
 plugins {
     java
     application
-    id("org.springframework.boot") version "3.4.1"
-    id("io.spring.dependency-management") version "1.1.7"
+    id("org.springframework.boot") version "3.3.5"
+    id("io.spring.dependency-management") version "1.1.6"
     id("org.flywaydb.flyway") version "11.4.0"
 }
 
@@ -42,7 +42,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
 
     // OpenAPI / Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
