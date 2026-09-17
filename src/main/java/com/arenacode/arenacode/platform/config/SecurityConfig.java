@@ -7,32 +7,23 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * Configuracao minima de seguranca para endpoints de infraestrutura. Libera acesso anonimo aos
- * endpoints tecnicos (/api/v1/**), aos endpoints do Actuator (health, info) e a documentacao
- * OpenAPI/Swagger, mantendo autenticacao para qualquer outra rota futura.
- */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(
-            authorize ->
-                authorize
-                    .requestMatchers(
-                        "/api/v1/**",
-                        "/actuator/**",
-                        "/v3/api-docs",
-                        "/v3/api-docs/**",
-                        "/v3/api-docs.yaml",
-                        "/swagger-ui.html",
-                        "/swagger-ui/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+    http
         .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // Public endpoints
+            .requestMatchers("/api/v1/auth/register").permitAll()
+            .requestMatchers("/api/v1/auth/test-password").permitAll()
+            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+            // All other requests require authentication
+            .anyRequest().authenticated()
+        )
         .httpBasic(Customizer.withDefaults());
 
     return http.build();
