@@ -11,49 +11,44 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-
 @Service
 public class RegistrationService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
+  private final UserRepository userRepository;
+  private final RoleRepository roleRepository;
+  private final PasswordEncoder passwordEncoder;
 
-    public RegistrationService(UserRepository userRepository,
-                               RoleRepository roleRepository,
-                               PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
+  public RegistrationService(
+      UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    this.userRepository = userRepository;
+    this.roleRepository = roleRepository;
+    this.passwordEncoder = passwordEncoder;
+  }
+
+  @Transactional
+  public RegisteredUserResponse register(RegisterRequest request) {
+    if (userRepository.existsByEmailIgnoreCase(request.email())) {
+      throw new EmailAlreadyExistsException(request.email());
     }
 
-    @Transactional
-    public RegisteredUserResponse register(RegisterRequest request) {
-        // Verificar e-mail duplicado
-        if (userRepository.existsByEmailIgnoreCase(request.email())) {
-            throw new EmailAlreadyExistsException(request.email());
-        }
+    User user = new User(request.displayName(), UserStatus.ACTIVE, false);
+    user.setEmail(request.email().toLowerCase());
+    user.setPasswordHash(passwordEncoder.encode(request.password()));
 
-        // Criar usuário
-        User user = new User(request.displayName(), UserStatus.ACTIVE, false);
-        user.setEmail(request.email().toLowerCase());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-
-        // Atribuir papel USER
-        Role userRole = roleRepository.findByCode("USER")
+    Role userRole =
+        roleRepository
+            .findByCode("USER")
             .orElseThrow(() -> new IllegalStateException("Role USER not found"));
-        user.setRoles(Set.of(userRole));
+    user.addRole(userRole);
 
-        User savedUser = userRepository.save(user);
+    User savedUser = userRepository.save(user);
 
-        return new RegisteredUserResponse(
-            savedUser.getId(),
-            savedUser.getEmail(),
-            savedUser.getDisplayName(),
-            savedUser.getStatus(),
-            savedUser.getPreferredLanguage(),
-            savedUser.getCreatedAt()
-        );
-    }
+    return new RegisteredUserResponse(
+        savedUser.getId(),
+        savedUser.getEmail(),
+        savedUser.getDisplayName(),
+        savedUser.getStatus(),
+        savedUser.getPreferredLanguage(),
+        savedUser.getCreatedAt());
+  }
 }
