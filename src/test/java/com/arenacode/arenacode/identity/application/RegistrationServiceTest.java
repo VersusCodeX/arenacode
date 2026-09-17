@@ -40,36 +40,37 @@ class RegistrationServiceTest {
         RegisterRequest request = new RegisterRequest("test@example.com", "password123456", "Test User");
         Role userRole = new Role("USER", "Regular user");
         userRole.setId(UUID.randomUUID());
-        
+
+        // ORDEM IMPORTANTE: configurar TODOS os mocks antes de chamar o serviço
         when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
         when(roleRepository.findByCode("USER")).thenReturn(Optional.of(userRole));
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$encodedHash");
-        
-        User savedUser = new User(request.displayName(), null, false);
-        savedUser.setId(UUID.randomUUID());
-        savedUser.setEmail(request.email().toLowerCase());
-        savedUser.setPasswordHash("$2a$10$encodedHash");
-        
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
         var response = registrationService.register(request);
 
         // Then
+        assertThat(response).isNotNull();
         assertThat(response.email()).isEqualTo("test@example.com");
         assertThat(response.displayName()).isEqualTo("Test User");
         verify(userRepository).save(any(User.class));
-        verify(passwordEncoder).encode(request.password());
+        verify(passwordEncoder).encode("password123456");
     }
 
     @Test
     void shouldThrowEmailAlreadyExistsException() {
         // Given
         RegisterRequest request = new RegisterRequest("existing@example.com", "password123456", "Test User");
+
+        // Configurar mock ANTES de executar
         when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
 
         // When/Then
         assertThatThrownBy(() -> registrationService.register(request))
-            .isInstanceOf(EmailAlreadyExistsException.class);
+                .isInstanceOf(EmailAlreadyExistsException.class);
+
+        // Verificar que save NÃO foi chamado
+        verify(userRepository, never()).save(any(User.class));
     }
 }
