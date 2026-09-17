@@ -1,12 +1,14 @@
 package com.arenacode.arenacode.config;
 
 import java.nio.charset.StandardCharsets;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.arenacode.arenacode.identity.config.JwtConfig;
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.OctetSequenceKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -46,15 +48,22 @@ public class SecurityConfiguration {
 
     @Bean
     JwtEncoder jwtEncoder(JwtConfig jwtConfig) {
-        return new NimbusJwtEncoder(
-                new ImmutableSecret<>(jwtConfig.secret().getBytes(StandardCharsets.UTF_8)));
+        OctetSequenceKey jwk = new OctetSequenceKey.Builder(
+                jwtConfig.secret().getBytes(StandardCharsets.UTF_8))
+                .algorithm(JWSAlgorithm.HS256)
+                .keyID("arenacode-test-key")
+                .build();
+
+        return new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
     }
 
     @Bean
     JwtDecoder jwtDecoder(JwtConfig jwtConfig) {
         SecretKey key = new SecretKeySpec(
                 jwtConfig.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(jwtConfig.issuer()));
         return decoder;
     }
