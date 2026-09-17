@@ -1,9 +1,8 @@
 plugins {
     java
     application
-    id("org.springframework.boot") version "3.3.5"
-    id("io.spring.dependency-management") version "1.1.6"
-    id("org.flywaydb.flyway") version "11.4.0"
+    id("org.springframework.boot") version "3.4.1"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "com.arenacode"
@@ -15,23 +14,21 @@ java {
     }
 }
 
-application {
-    mainClass.set("com.arenacode.arenacode.ArenacodeApplication")
-}
-
 repositories {
     mavenCentral()
 }
 
-val testcontainersVersion = "1.20.4"
-
 dependencies {
-    // Spring Boot
+    // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // JWT
+    implementation("com.nimbusds:nimbus-jose-jwt:9.37.3")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
@@ -49,20 +46,17 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     // Testing
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.testcontainers:postgresql:1.19.8")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.8")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType<Test> {
+application {
+    mainClass.set("com.arenacode.arenacode.ArenacodeApplication")
+}
+
+tasks.named<Test>("test") {
     useJUnitPlatform()
-}
-
-flyway {
-    url = "jdbc:postgresql://localhost:5432/arenacode"
-    user = "postgres"
-    password = "postgres"
-    locations = arrayOf("classpath:db/migration")
 }

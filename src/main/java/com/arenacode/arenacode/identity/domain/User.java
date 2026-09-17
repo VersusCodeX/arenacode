@@ -35,10 +35,7 @@ public class User {
   private int currentRating;
 
   @Enumerated(EnumType.STRING)
-  @Column(
-      name = "preferred_language",
-      nullable = false,
-      length = 30,
+  @Column(name = "preferred_language", nullable = false, length = 30,
       columnDefinition = "VARCHAR(30) DEFAULT 'JAVA_21'")
   private ProgrammingLanguage preferredLanguage;
 
@@ -52,8 +49,7 @@ public class User {
   private Instant deletedAt;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "user_roles",
+  @JoinTable(name = "user_roles",
       joinColumns = @JoinColumn(name = "user_id"),
       inverseJoinColumns = @JoinColumn(name = "role_id"))
   private Set<Role> roles = new HashSet<>();
@@ -71,14 +67,8 @@ public class User {
   @PrePersist
   void onCreate() {
     Instant now = Instant.now();
-
-    if (createdAt == null) {
-      createdAt = now;
-    }
-
-    if (updatedAt == null) {
-      updatedAt = now;
-    }
+    if (createdAt == null) createdAt = now;
+    if (updatedAt == null) updatedAt = now;
   }
 
   @PreUpdate
