@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/arenacode
     username: arenacode
-    password: arenacode
+    password: local-dev-password
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
