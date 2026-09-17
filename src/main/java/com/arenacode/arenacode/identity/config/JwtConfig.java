@@ -53,12 +53,4 @@ public class JwtConfig {
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
         return NimbusJwtDecoder.withSecretKey(jwtSecretKey).build();
     }
-
-    @Bean
-    public JwtProperties jwtPropertiesBean(Environment env) {
-        JwtProperties props = new JwtProperties();
-        props.setIssuer(env.getProperty("APP_JWT_ISSUER", "arenacode.dev"));
-        props.setAccessTokenTtl(Duration.ofMinutes(15));
-        return props;
-    }
 }
