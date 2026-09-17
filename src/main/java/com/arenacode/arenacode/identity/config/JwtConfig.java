@@ -1,7 +1,6 @@
 package com.arenacode.arenacode.identity.config;
 
 import com.nimbusds.jose.jwk.OctetSequenceKey;
-import com.nimbusds.jose.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import javax.crypto.SecretKey;
@@ -36,7 +35,7 @@ public class JwtConfig {
                 throw new IllegalStateException("JWT_SECRET environment variable is required in non-dev profiles");
             }
         }
-        SecretKey key = new OctetSequenceKey.Builder(Base64.encode(secretValue.getBytes(StandardCharsets.UTF_8))).build().toKey();
+        SecretKey key = new OctetSequenceKey.Builder(secretValue.getBytes(StandardCharsets.UTF_8)).build().toKey();
         if ("dev".equals(env.getProperty("spring.profiles.active", "")) && "dev-secret-key-for-local-development-only-do-not-use-in-production".equals(secretValue)) {
             log.warn("Using development JWT secret. This is insecure and must not be used in production.");
         }
@@ -44,8 +43,8 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtEncoder jwtEncoder(SecretKey jwtSecretKey, JwtProperties properties) {
-        return new NimbusJwtEncoder(new OctetSequenceKey.Builder(Base64.encode(jwtSecretKey.getEncoded())).build());
+    public JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
+        return new NimbusJwtEncoder(new OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build());
     }
 
     @Bean
