@@ -2,7 +2,7 @@ package com.arenacode.arenacode.identity.config;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,8 +16,7 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthe
 
     @Override
     public JwtAuthenticationToken convert(Jwt jwt) {
-        @SuppressWarnings("unchecked")
-        Set<String> roles = (Set<String>) jwt.getClaimAsMap("roles").keySet();
+        List<String> roles = jwt.getClaimAsStringList("roles");
         Collection<GrantedAuthority> authorities;
         if (roles == null || roles.isEmpty()) {
             authorities = new ArrayList<>();
