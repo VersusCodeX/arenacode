@@ -1,116 +1,55 @@
 package com.arenacode.arenacode.platform.exception;
 
+import com.arenacode.arenacode.identity.application.EmailAlreadyExistsException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
-import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Tratamento global de excecoes para toda a API, seguindo RFC 9457 (Problem Details). Todas as
- * respostas de erro usam o tipo application/problem+json.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  private static final URI PROBLEM_TYPE_BASE = URI.create("https://arenacode.dev/problems");
-
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
-    List<ApiFieldViolation> violations =
+    Map<String, String> errors =
         ex.getBindingResult().getFieldErrors().stream()
-            .map(e -> new ApiFieldViolation(e.getField(), e.getDefaultMessage()))
-            .toList();
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    error -> error.getField(),
+                    error -> error.getDefaultMessage() == null ? "Invalid value" : error.getDefaultMessage(),
+                    (first, second) -> first));
 
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Falha de validacao de entrada");
-    problem.setTitle("Validation Error");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("validation-error"));
-    problem.setProperty("timestamp", Instant.now());
-    problem.setProperty("violations", violations);
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
+    problemDetail.setTitle("Validation failed");
+    problemDetail.setType(URI.create("https://arenacode.dev/validation-error"));
+    problemDetail.setProperty("errors", errors);
 
-    return ResponseEntity.badRequest().body(problem);
+    return ResponseEntity.badRequest().body(problemDetail);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException ex) {
-    List<ApiFieldViolation> violations =
-        ex.getConstraintViolations().stream()
-            .map(v -> new ApiFieldViolation(v.getPropertyPath().toString(), v.getMessage()))
-            .toList();
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    problemDetail.setTitle("Constraint violation");
+    problemDetail.setType(URI.create("https://arenacode.dev/constraint-violation"));
 
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Falha de validacao de entrada");
-    problem.setTitle("Validation Error");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("validation-error"));
-    problem.setProperty("timestamp", Instant.now());
-    problem.setProperty("violations", violations);
-
-    return ResponseEntity.badRequest().body(problem);
+    return ResponseEntity.badRequest().body(problemDetail);
   }
 
-  @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<ProblemDetail> handleResourceNotFound(ResourceNotFoundException ex) {
-    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
-    problem.setTitle("Resource Not Found");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("resource-not-found"));
-    problem.setProperty("timestamp", Instant.now());
+  @ExceptionHandler(EmailAlreadyExistsException.class)
+  public ResponseEntity<ProblemDetail> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    problemDetail.setTitle("Email already exists");
+    problemDetail.setType(URI.create("https://arenacode.dev/email-already-exists"));
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
-  }
-
-  @ExceptionHandler(ConflictException.class)
-  public ResponseEntity<ProblemDetail> handleConflict(ConflictException ex) {
-    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-    problem.setTitle("Conflict");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("conflict"));
-    problem.setProperty("timestamp", Instant.now());
-
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
-  }
-
-  @ExceptionHandler(BusinessRuleViolationException.class)
-  public ResponseEntity<ProblemDetail> handleBusinessRuleViolation(
-      BusinessRuleViolationException ex) {
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
-    problem.setTitle("Business Rule Violation");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("business-rule-violation"));
-    problem.setProperty("timestamp", Instant.now());
-
-    return ResponseEntity.unprocessableEntity().body(problem);
-  }
-
-  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-  public ResponseEntity<ProblemDetail> handleMethodNotSupported(
-      HttpRequestMethodNotSupportedException ex) {
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(
-            HttpStatus.METHOD_NOT_ALLOWED, "Metodo HTTP nao suportado para este recurso");
-    problem.setTitle("Method Not Allowed");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("method-not-allowed"));
-    problem.setProperty("timestamp", Instant.now());
-
-    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(problem);
-  }
-
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ProblemDetail> handleGeneric(Exception ex) {
-    ProblemDetail problem =
-        ProblemDetail.forStatusAndDetail(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Ocorreu um erro interno inesperado. Contate o suporte se o problema persistir.");
-    problem.setTitle("Internal Server Error");
-    problem.setType(PROBLEM_TYPE_BASE.resolve("internal-server-error"));
-    problem.setProperty("timestamp", Instant.now());
-    // Nao vaza stacktrace ou detalhes de infraestrutura para o cliente.
-
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
   }
 }
