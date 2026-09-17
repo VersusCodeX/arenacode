@@ -1,16 +1,13 @@
 spring:
   application:
     name: arenacode
-
   profiles:
     active: dev
-
   datasource:
     url: jdbc:postgresql://localhost:5432/arenacode
     username: arenacode
     password: arenacode
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,22 +16,28 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: false
-
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${APP_JWT_ISSUER:arenacode.dev}
 server:
   port: 8080
-
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-
+app:
+  jwt:
+    secret: ${JWT_SECRET:}
+    issuer: ${APP_JWT_ISSUER:arenacode.dev}
+    access-token-ttl: 15m
 logging:
   level:
     root: INFO
