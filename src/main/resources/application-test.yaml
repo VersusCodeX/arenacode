@@ -1,12 +1,12 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/arenacode
-    username: arenacode
-    password: arenacode
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:arenacode}
+    username: ${POSTGRES_USER:arenacode}
+    password: ${POSTGRES_PASSWORD:local-dev-password}
   flyway:
-    url: jdbc:postgresql://localhost:5432/arenacode
-    user: arenacode
-    password: arenacode
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:arenacode}
+    user: ${POSTGRES_USER:arenacode}
+    password: ${POSTGRES_PASSWORD:local-dev-password}
 
 app:
   jwt:
