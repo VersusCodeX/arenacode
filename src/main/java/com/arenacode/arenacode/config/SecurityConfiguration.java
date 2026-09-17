@@ -1,6 +1,6 @@
 package com.arenacode.arenacode.config;
 
-import com.arenacode.arenacode.identity.config.JwtAuthenticationConverter;
+import com.arenacode.arenacode.identity.config.CustomJwtAuthenticationConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,9 +12,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
+    private final CustomJwtAuthenticationConverter jwtAuthenticationConverter;
 
-    public SecurityConfiguration(JwtAuthenticationConverter jwtAuthenticationConverter) {
+    public SecurityConfiguration(CustomJwtAuthenticationConverter jwtAuthenticationConverter) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
     }
 

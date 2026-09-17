@@ -1,6 +1,5 @@
 package com.arenacode.arenacode.identity.config;
 
-import com.nimbusds.jose.jwk.OctetSequenceKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import javax.crypto.SecretKey;
@@ -15,6 +14,12 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSelector;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.nimbusds.jose.util.Base64;
 
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
@@ -35,20 +40,23 @@ public class JwtConfig {
                 throw new IllegalStateException("JWT_SECRET environment variable is required in non-dev profiles");
             }
         }
-        SecretKey key = new OctetSequenceKey.Builder(secretValue.getBytes(StandardCharsets.UTF_8)).build().toKey();
         if ("dev".equals(env.getProperty("spring.profiles.active", "")) && "dev-secret-key-for-local-development-only-do-not-use-in-production".equals(secretValue)) {
             log.warn("Using development JWT secret. This is insecure and must not be used in production.");
         }
-        return key;
+        return new javax.crypto.spec.SecretKeySpec(secretValue.getBytes(StandardCharsets.UTF_8), "HMACSHA256");
     }
 
     @Bean
     public JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
-        return new NimbusJwtEncoder(new OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build());
+        JWK jwk = new com.nimbusds.jose.jwk.OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build();
+        var jwkSource = new ImmutableSecret<>(jwk);
+        return new NimbusJwtEncoder(jwkSource);
     }
 
     @Bean
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
+        JWK jwk = new com.nimbusds.jose.jwk.OctetSequenceKey.Builder(jwtSecretKey.getEncoded()).build();
+        var jwkSource = new ImmutableSecret<>(jwk);
         return NimbusJwtDecoder.withSecretKey(jwtSecretKey).build();
     }
 
