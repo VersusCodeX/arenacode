@@ -1,35 +1,5 @@
-spring:
-  datasource:
-    url: jdbc:tc:postgresql:16-alpine:///arenacode_test
-    driver-class-name: org.testcontainers.jdbc.PostgresDriver
-    username: test
-    password: test
-
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: false
-
-  flyway:
-    enabled: false
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: test-issuer
-
 app:
   jwt:
-    secret: test-secret-key-for-integration-tests-only
-    issuer: test-issuer
-    access-token-ttl: 15m
-
-logging:
-  level:
-    root: WARN
-    com.arenacode.arenacode: DEBUG
-    org.springframework.security: DEBUG
+    secret: "test-secret-key-that-is-at-least-32-bytes-long"
+    issuer: "arenacode-test"
+    access-token-ttl: PT15M
