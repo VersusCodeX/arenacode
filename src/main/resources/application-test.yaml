@@ -1,3 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/arenacode
+    username: arenacode
+    password: arenacode
+  flyway:
+    url: jdbc:postgresql://localhost:5432/arenacode
+    user: arenacode
+    password: arenacode
+
 app:
   jwt:
     secret: "test-secret-key-that-is-at-least-32-bytes-long"
