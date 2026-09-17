@@ -68,13 +68,15 @@ public class AuthenticationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AuthenticationException("User not found"));
 
+        Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
+
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getDisplayName(),
                 user.getStatus(),
-                user.getPreferredLanguage(),
-                user.getCurrentRating());
+                roleCodes);
     }
 
     private String createAccessToken(UUID userId, String email, String displayName, Set<String> roles) {
