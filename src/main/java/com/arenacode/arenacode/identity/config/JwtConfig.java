@@ -6,8 +6,8 @@ import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -17,10 +17,18 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
 
-@EnableConfigurationProperties(JwtProperties.class)
+@Configuration
 public class JwtConfig {
 
     private static final Logger log = LoggerFactory.getLogger(JwtConfig.class);
+
+    @Bean
+    public JwtProperties jwtProperties(Environment env) {
+        JwtProperties props = new JwtProperties();
+        props.setIssuer(env.getProperty("APP_JWT_ISSUER", "arenacode.dev"));
+        props.setAccessTokenTtl(Duration.ofMinutes(15));
+        return props;
+    }
 
     @Bean
     @ConditionalOnMissingBean(name = "jwtSecretKey")
