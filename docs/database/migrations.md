@@ -1,61 +1,38 @@
-# Migrations - ArenaCode Backend
+# ArenaCode - Database Migrations
 
-## Fonte oficial do schema
+Este documento lista todas as migrations do Flyway aplicadas ao banco de dados.
 
-**Flyway** é a única fonte oficial de criação e evolução do schema do banco de dados. Nenhuma tabela, extensão, função ou trigger deve ser criada manualmente via DBeaver ou qualquer outra ferramenta fora das migrations versionadas.
+## Migrations
 
-`spring.jpa.hibernate.ddl-auto` está fixado em `validate`: o Hibernate apenas confere se as entidades JPA correspondem ao schema existente, mas nunca cria, altera ou remove tabelas.
+### V1__baseline.sql
 
-## Localização
+**Descri o:** Migration inicial que estabelece a baseline do schema.
 
-As migrations residem em `src/main/resources/db/migration/` e são aplicadas automaticamente na inicialização da aplicação (`spring.flyway.enabled=true`).
+**M dulo:** foundation  
+**Data:** 2026-09-08
 
-## Convenção de nomenclatura
+### V2__identity_core.sql
 
-```
-V<numero>__<descricao_em_snake_case>.sql
-```
+**Descri o:** Cria a estrutura base do m dulo Identity.
 
-- `<numero>`: inteiro sequencial (`1`, `2`, `3`, ...). Não requer zero-padding.
-- `<descricao_em_snake_case>`: breve, em inglês, usando `_` como separador.
-- Duplo underscore (`__`) entre o número e a descrição é obrigatório (padrão do Flyway).
+**M dulo:** identity  
+**Data:** 2026-09-16
 
-Exemplos:
-```
-V1__baseline.sql
-V2__create_users_table.sql
-V3__create_problems_table.sql
-```
+**Tabelas criadas:**
+- `users` - Armazena usurios com constraints de dom nio e trigger de `updated_at`.
+- `roles` - Pap is de autorizao com 4 pap is iniciais (ADMIN, MODERATOR, USER, SPECTATOR).
+- `user_roles` - Associao muitos-para-muitos entre usurios e pap is.
 
-## Regras
+**Í«ndices criados:**
+- `users_status_idx` em `users(status)`.
+- `user_roles_role_id_idx` em `user_roles(role_id)`.
 
-- **Migrations aplicadas nunca devem ser editadas.** Uma vez mesclada na branch principal, uma migration é imutável. Correções exigem uma nova migration.
-- **Cada migration deve ser idempotente sempre que possível** (`CREATE EXTENSION IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS` quando fizer sentido).
-- **Nenhuma migration deve conter dados sensíveis** (senhas, tokens, PII real).
-- Extensões do PostgreSQL (como `pgcrypto`, `citext`) devem ser habilitadas via migration, nunca manualmente.
-- Toda migration deve ser validada localmente (`./gradlew test`, com Testcontainers) antes do merge.
+**Constraints:**
+- `users_status_check` - Valida status permitido.
+- `users_preferred_language_check` - Valida linguagem de programao.
+- `users_current_rating_check` - Garante rating >= 0.
+- `users_guest_status_consistency` - Garante consistncia entre status GUEST e is_guest.
+- `users_guest_email_password_check` - Garante que guests tenham email/password nulos.
+- `users_email_unique` - Unique em email case-insensitive via CITEXT.
 
-## Migrations existentes
-
-| Versão | Arquivo | Descrição |
-|--------|---------|------------|
-| V1 | `V1__baseline.sql` | Migration baseline de infraestrutura: habilita extensões `pgcrypto` e `citext`, cria a tabela `app_metadata`, a função `fn_set_updated_at()` e a trigger `trg_app_metadata_set_updated_at`. Insere o seed `schema_version_label = V1`. **Não cria nenhuma tabela de domínio** (users, problems, matches, submissions, etc.) — seu único objetivo é validar a conexão com PostgreSQL e a execução do Flyway. |
-
-## Validação via testes
-
-A execução da migration é validada automaticamente por testes de integração com **Testcontainers** (PostgreSQL real em container efêmero), sem depender de infraestrutura local instalada:
-
-- `ArenacodeApplicationTests`: valida que o contexto Spring sobe com sucesso, o que implica conexão bem-sucedida com o PostgreSQL e execução sem erros do Flyway.
-- `BaselineMigrationIntegrationTest`: valida explicitamente, via JDBC puro (sem entidades JPA), que:
-  - a tabela `flyway_schema_history` existe;
-  - a tabela `app_metadata` existe;
-  - o seed `schema_version_label = V1` foi inserido corretamente;
-  - a trigger `trg_app_metadata_set_updated_at` atualiza `updated_at` ao alterar `metadata_value`.
-
-## Como adicionar uma nova migration
-
-1. Crie o arquivo em `src/main/resources/db/migration/` seguindo a convenção de nomenclatura.
-2. Escreva SQL puro e compatível com PostgreSQL.
-3. Rode `./gradlew test` para validar que a migration é aplicada sem erros.
-4. Atualize `docs/database/logical-model.md` se a migration introduzir ou alterar entidades de domínio.
-5. Registre a nova migration na tabela de "Migrations existentes" acima.
+**Dependncias:** Nenhuma (migration independente do m dulo identity).

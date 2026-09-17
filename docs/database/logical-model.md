@@ -1,46 +1,56 @@
-# Modelo Lógico de Dados - ArenaCode Backend
+# ArenaCode - Logical Database Model
 
-## Status atual
+Este documento descreve o modelo lgico do banco de dados do ArenaCode.
 
-O backend ainda está em fase de fundação. **Nenhuma tabela de domínio foi criada.** Este documento será expandido conforme cada módulo (`identity`, `problem`, `match`, `submission`, `rating`, `recommendation`, `audit`) definir suas próprias entidades e migrations.
+## Identity Module
 
-## Baseline atual
+### users
 
-A única migration existente (`V1__baseline.sql`) estabelece apenas infraestrutura de banco, sem modelar domínio de negócio. Ela existe para validar a conexão com PostgreSQL e a execução do Flyway antes de qualquer modelagem real.
+Armazena usurios da plataforma, incluindo convidados e usurios registrados.
 
-### Extensões habilitadas
+| Coluna             | Tipo          | Restries                                     |
+|--------------------|---------------|------------------------------------------------|
+| id                 | UUID          | PRIMARY KEY, DEFAULT gen_random_uuid()         |
+| email              | CITEXT        | UNIQUE (NULLs mltiplos permitidos)            |
+| password_hash      | VARCHAR(255)  | NULL                                           |
+| display_name       | VARCHAR(80)   | NOT NULL                                       |
+| status             | VARCHAR(20)   | NOT NULL, CHECK (GUEST, ACTIVE, SUSPENDED, BANNED, DELETED) |
+| is_guest           | BOOLEAN       | NOT NULL, DEFAULT FALSE                        |
+| current_rating     | INTEGER       | NOT NULL, DEFAULT 1000, CHECK >= 0             |
+| preferred_language | VARCHAR(30)   | NOT NULL, DEFAULT 'JAVA_21', CHECK (JAVA_21)   |
+| created_at         | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()                        |
+| updated_at         | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()                        |
+| deleted_at         | TIMESTAMPTZ   | NULL                                           |
 
-| Extensão | Finalidade |
-|----------|------------|
-| `pgcrypto` | Fornece `gen_random_uuid()`, usada como default da chave primária `id` de `app_metadata` e, futuramente, de outras entidades que adotarem UUID como identificador. |
-| `citext` | Tipo de texto case-insensitive, útil para colunas como e-mail ou username em módulos futuros (ex.: `identity`). Habilitada preventivamente na baseline. |
+**Constraints adicionais:**
+- Se `status = 'GUEST'`, ento `is_guest = TRUE`.
+- Se `is_guest = TRUE`, ento `email` e `password_hash` devem ser NULL.
+- `email` nico case-insensitive (via CITEXT).
 
-### Tabela: `app_metadata`
+### roles
 
-Tabela de infraestrutura, **não pertence a nenhum módulo de domínio**. Usada para armazenar metadados operacionais da aplicação (ex.: versão do schema).
+Pap is de autorizao do sistema.
 
-| Coluna | Tipo | Restrições | Descrição |
-|--------|------|-------------|------------|
-| `id` | UUID | PK, default `gen_random_uuid()` | Identificador único do registro. |
-| `metadata_key` | VARCHAR(100) | NOT NULL, UNIQUE | Chave do metadado (ex.: `schema_version_label`). |
-| `metadata_value` | TEXT | NOT NULL | Valor do metadado. |
-| `created_at` | TIMESTAMPTZ | NOT NULL, default `NOW()` | Data de criação do registro. |
-| `updated_at` | TIMESTAMPTZ | NOT NULL, default `NOW()` | Data da última atualização, mantida automaticamente pela trigger abaixo. |
+| Coluna      | Tipo          | Restries                             |
+|-------------|---------------|----------------------------------------|
+| id          | UUID          | PRIMARY KEY, DEFAULT gen_random_uuid() |
+| code        | VARCHAR(40)   | NOT NULL, UNIQUE                       |
+| description | VARCHAR(255)  | NOT NULL                               |
+| created_at  | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()                |
 
-### Função: `fn_set_updated_at()`
+**Roles iniciais:** ADMIN, MODERATOR, USER, SPECTATOR.
 
-Função PL/pgSQL genérica que define `NEW.updated_at = NOW()` e retorna `NEW`. Reutilizável por outras tabelas que adotarem o mesmo padrão de auditoria de atualização em migrations futuras.
+### user_roles
 
-### Trigger: `trg_app_metadata_set_updated_at`
+Associao muitos-para-muitos entre usurios e pap is.
 
-Disparada `BEFORE UPDATE` em `app_metadata`, garantindo que `updated_at` reflita sempre o momento da última modificação, sem depender da aplicação para definir esse valor.
+| Coluna    | Tipo        | Restries                               |
+|-----------|-------------|------------------------------------------|
+| user_id   | UUID        | NOT NULL, FK → users(id), ON DELETE CASCADE |
+| role_id   | UUID        | NOT NULL, FK → roles(id), ON DELETE CASCADE |
+| granted_at| TIMESTAMPTZ | NOT NULL, DEFAULT NOW()                  |
+| PRIMARY KEY | (user_id, role_id) |                                  |
 
-### Seed inicial
-
-| `metadata_key` | `metadata_value` |
-|----------------|-------------------|
-| `schema_version_label` | `V1` |
-
-## Próximos passos
-
-A modelagem de entidades de domínio (usuários, problemas, partidas, submissões, ratings, etc.) será documentada aqui conforme cada módulo evoluir, sempre acompanhada da migration Flyway correspondente.
+**Í«ndices:**
+- `user_roles_role_id_idx` em `role_id`.
+- `users_status_idx` em `status`.
