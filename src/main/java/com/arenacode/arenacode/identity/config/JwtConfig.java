@@ -23,17 +23,9 @@ public class JwtConfig {
     private static final Logger log = LoggerFactory.getLogger(JwtConfig.class);
 
     @Bean
-    public JwtProperties jwtProperties(Environment env) {
-        JwtProperties props = new JwtProperties();
-        props.setIssuer(env.getProperty("APP_JWT_ISSUER", "arenacode.dev"));
-        props.setAccessTokenTtl(Duration.ofMinutes(15));
-        return props;
-    }
-
-    @Bean
     @ConditionalOnMissingBean(name = "jwtSecretKey")
-    public SecretKey jwtSecretKey(JwtProperties properties, Environment env) {
-        String secretValue = env.getProperty("JWT_SECRET", properties.getSecret());
+    public SecretKey jwtSecretKey(Environment env) {
+        String secretValue = env.getProperty("JWT_SECRET", env.getProperty("app.jwt.secret", ""));
         if (secretValue == null || secretValue.isBlank()) {
             String activeProfile = env.getProperty("spring.profiles.active", "");
             if ("dev".equals(activeProfile)) {

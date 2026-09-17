@@ -3,13 +3,14 @@ package com.arenacode.arenacode.identity.application;
 import com.arenacode.arenacode.identity.adapter.in.web.LoginRequest;
 import com.arenacode.arenacode.identity.adapter.in.web.LoginResponse;
 import com.arenacode.arenacode.identity.adapter.out.persistence.UserRepository;
-import com.arenacode.arenacode.identity.config.JwtProperties;
 import com.arenacode.arenacode.identity.domain.User;
 import com.arenacode.arenacode.identity.domain.UserStatus;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -23,13 +24,13 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
-    private final JwtProperties jwtProperties;
+    private final Environment env;
 
-    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, JwtProperties jwtProperties) {
+    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, Environment env) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
-        this.jwtProperties = jwtProperties;
+        this.env = env;
     }
 
     @Transactional(readOnly = true)
@@ -43,15 +44,17 @@ public class AuthenticationService {
         }
         Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
         String accessToken = createAccessToken(user.getId(), user.getEmail(), user.getDisplayName(), roleCodes);
-        return new LoginResponse(accessToken, "Bearer", jwtProperties.getAccessTokenTtl().getSeconds(), user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
+        long ttlSeconds = Long.parseLong(env.getProperty("app.jwt.access-token-ttl", "15m").replace("m", "")) * 60;
+        return new LoginResponse(accessToken, "Bearer", ttlSeconds, user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
     }
 
     private String createAccessToken(UUID userId, String email, String displayName, Set<String> roles) {
         Instant now = Instant.now();
+        Duration ttl = Duration.ofMinutes(15);
         JwtClaimsSet claims = JwtClaimsSet.builder()
-            .issuer(jwtProperties.getIssuer())
+            .issuer(env.getProperty("APP_JWT_ISSUER", "arenacode.dev"))
             .issuedAt(now)
-            .expiresAt(now.plus(jwtProperties.getAccessTokenTtl()))
+            .expiresAt(now.plus(ttl))
             .subject(userId.toString())
             .claim("email", email)
             .claim("displayName", displayName)
