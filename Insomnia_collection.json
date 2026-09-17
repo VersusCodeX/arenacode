@@ -1,0 +1,95 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-09-16T23:35:00.000Z",
+  "__export_source": "insomnia.desktop",
+  "resources": [
+    {
+      "_id": "wrk_arenacode",
+      "_type": "workspace",
+      "name": "ArenaCode API",
+      "description": "Colecao para testar endpoints da API ArenaCode"
+    },
+    {
+      "_id": "env_arenacode_local",
+      "_type": "environment",
+      "name": "Local",
+      "data": {
+        "baseUrl": "http://localhost:8080"
+      },
+      "parentId": "wrk_arenacode"
+    },
+    {
+      "_id": "req_register_valid",
+      "_type": "request",
+      "name": "POST /api/auth/register (valid)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"usuario@exemplo.com\",\n  \"password\": \"Senha123!\",\n  \"displayName\": \"Usuario Exemplo\"\n}"
+      },
+      "parentId": "wrk_arenacode"
+    },
+    {
+      "_id": "req_register_duplicate",
+      "_type": "request",
+      "name": "POST /api/auth/register (duplicate email)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"usuario@exemplo.com\",\n  \"password\": \"OutraSenha456!\",\n  \"displayName\": \"Outro Usuario\"\n}"
+      },
+      "parentId": "wrk_arenacode"
+    },
+    {
+      "_id": "req_register_invalid_email",
+      "_type": "request",
+      "name": "POST /api/auth/register (invalid email)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"email-invalido\",\n  \"password\": \"Senha123!\",\n  \"displayName\": \"Usuario Teste\"\n}"
+      },
+      "parentId": "wrk_arenacode"
+    },
+    {
+      "_id": "req_register_weak_password",
+      "_type": "request",
+      "name": "POST /api/auth/register (weak password)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"teste@exemplo.com\",\n  \"password\": \"123\",\n  \"displayName\": \"Usuario Teste\"\n}"
+      },
+      "parentId": "wrk_arenacode"
+    }
+  ]
+}
