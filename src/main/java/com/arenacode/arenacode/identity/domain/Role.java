@@ -1,7 +1,11 @@
 package com.arenacode.arenacode.identity.domain;
 
-import jakarta.persistence.*;
-import java.time.Instant;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
@@ -9,34 +13,25 @@ import java.util.UUID;
 public class Role {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid DEFAULT gen_random_uuid()")
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 40)
+    @Column(nullable = false, unique = true, length = 30)
     private String code;
 
-    @Column(nullable = false, length = 255)
-    private String description;
-
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
-    private Instant createdAt;
-
-    protected Role() {}
-
-    public Role(String code, String description) {
-        this.code = code;
-        this.description = description;
+    protected Role() {
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Role(String code) {
+        this.code = code;
+    }
 
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
+    public UUID getId() {
+        return id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public String getCode() {
+        return code;
+    }
 }
