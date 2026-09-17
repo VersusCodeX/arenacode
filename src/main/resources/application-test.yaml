@@ -1,48 +1,35 @@
-# Perfil de testes automatizados.
-# Nunca deve apontar para banco de produção.
-
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/arenacode
-    username: arenacode
-    password: local-dev-password
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 30000
+    url: jdbc:tc:postgresql:16-alpine:///arenacode_test
+    driver-class-name: org.testcontainers.jdbc.PostgresDriver
+    username: test
+    password: test
+
   jpa:
-    open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
+
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
 
-server:
-  port: 8080
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: test-issuer
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
-    health:
-      show-details: never
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
+app:
+  jwt:
+    secret: test-secret-key-for-integration-tests-only
+    issuer: test-issuer
+    access-token-ttl: 15m
 
 logging:
   level:
     root: WARN
-    com.arenacode: INFO
-    org.springframework: WARN
-    org.hibernate: WARN
+    com.arenacode.arenacode: DEBUG
+    org.springframework.security: DEBUG
