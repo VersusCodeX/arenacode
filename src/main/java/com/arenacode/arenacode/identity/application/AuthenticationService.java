@@ -4,13 +4,12 @@ import com.arenacode.arenacode.identity.adapter.in.web.LoginRequest;
 import com.arenacode.arenacode.identity.adapter.in.web.LoginResponse;
 import com.arenacode.arenacode.identity.adapter.in.web.UserProfileResponse;
 import com.arenacode.arenacode.identity.adapter.out.persistence.UserRepository;
+import com.arenacode.arenacode.identity.config.JwtConfig;
 import com.arenacode.arenacode.identity.domain.User;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,13 +27,13 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
-    private final Environment env;
+    private final JwtConfig jwtConfig;
 
-    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, Environment env) {
+    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, JwtConfig jwtConfig) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
-        this.env = env;
+        this.jwtConfig = jwtConfig;
     }
 
     @Transactional(readOnly = true)
@@ -47,9 +46,9 @@ public class AuthenticationService {
             throw new AccountDisabledException("Account is not allowed to authenticate");
         }
         Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
-        String accessToken = createAccessToken(user.getId(), user.getEmail(), user.getDisplayName(), roleCodes);
-        long ttlSeconds = Long.parseLong(env.getProperty("app.jwt.access-token-ttl", "15m").replace("m", "")) * 60;
-        return new LoginResponse(accessToken, "Bearer", ttlSeconds, user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
+        String accessToken = createAccessToken(user.getId(), user.getDisplayName(), roleCodes);
+        long ttlSeconds = jwtConfig.accessTokenTtl().toSeconds();
+        return new LoginResponse(accessToken, "Bearer", ttlSeconds, toProfile(user, roleCodes));
     }
 
     @Transactional(readOnly = true)
@@ -71,28 +70,24 @@ public class AuthenticationService {
                 .orElseThrow(() -> new AuthenticationException("User not found"));
 
         Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
-
-
-        return new UserProfileResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getStatus(),
-                roleCodes);
+        return toProfile(user, roleCodes);
     }
 
-    private String createAccessToken(UUID userId, String email, String displayName, Set<String> roles) {
+    private UserProfileResponse toProfile(User user, Set<String> roleCodes) {
+        return new UserProfileResponse(
+                user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
+    }
+
+    private String createAccessToken(UUID userId, String displayName, Set<String> roles) {
         Instant now = Instant.now();
-        Duration ttl = Duration.ofMinutes(15);
         JwtClaimsSet claims = JwtClaimsSet.builder()
-            .issuer(env.getProperty("APP_JWT_ISSUER", "arenacode.dev"))
-            .issuedAt(now)
-            .expiresAt(now.plus(ttl))
-            .subject(userId.toString())
-            .claim("email", email)
-            .claim("displayName", displayName)
-            .claim("roles", roles)
-            .build();
+                .issuer(jwtConfig.issuer())
+                .issuedAt(now)
+                .expiresAt(now.plus(jwtConfig.accessTokenTtl()))
+                .subject(userId.toString())
+                .claim("displayName", displayName)
+                .claim("roles", roles)
+                .build();
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
