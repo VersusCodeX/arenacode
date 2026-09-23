@@ -27,6 +27,8 @@ O projeto utiliza ferramentas automatizadas para garantir padronizacao de estilo
 - `spotlessApply`: antes de cada commit, para garantir que o codigo esta formatado.
 - `spotlessCheck`: em CI/CD ou antes de push, para validar que nenhum arquivo foi esquecido.
 
+**IntelliJ:** o formatador padrao da IDE usa 4 espacos e nao segue o Google Java Format. Instale o plugin `google-java-format` ou rode `./gradlew spotlessApply` antes de commitar.
+
 ### Analise estatica (SpotBugs)
 
 ```bash
@@ -58,7 +60,7 @@ O projeto utiliza ferramentas automatizadas para garantir padronizacao de estilo
 
 **Nota:** o build **falha** se:
 - `spotlessCheck` encontrar arquivos nao formatados.
-- `spotbugsMain` encontrar bugs de alta confianca nao suprimidos.
+- `spotbugsMain` encontrar bugs de confianca media ou alta (`reportLevel = MEDIUM`) nao suprimidos.
 - `test` falhar em algum teste.
 
 ## Supressoes (SpotBugs)
@@ -77,6 +79,12 @@ Exemplo:
 public record MyDto(String value) {
 }
 ```
+
+A anotacao vem da dependencia `spotbugs-annotations` (`compileOnly`), na mesma versao do SpotBugs usada pelo plugin. Prefira o atributo `justification` para registrar o motivo.
+
+**Supressoes atuais:**
+- `CT_CONSTRUCTOR_THROW` nos construtores de `Problem` e `TestCase`: entidades JPA nao podem ser `final` e validar no construtor e intencional.
+- `EI_EXPOSE_REP` em `TestCase.getProblem()`: navegacao intencional para o agregado raiz.
 
 ## Integracao com CI/CD
 
