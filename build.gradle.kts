@@ -3,6 +3,8 @@ plugins {
     application
     id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.7"
+    id("com.diffplug.spotless") version "8.10.1"
+    id("com.github.spotbugs") version "6.4.1"
 }
 
 group = "com.arenacode"
@@ -45,6 +47,9 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
+    // Qualidade (@SuppressFBWarnings, na mesma versão do SpotBugs usado pelo plugin)
+    compileOnly("com.github.spotbugs:spotbugs-annotations:${spotbugs.toolVersion.get()}")
+
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -60,4 +65,28 @@ application {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        target("src/main/java/**/*.java", "src/test/java/**/*.java")
+    }
+}
+
+spotbugs {
+    reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+}
+
+tasks.spotbugsTest {
+    enabled = false
+}
+
+tasks.spotbugsMain {
+    reports {
+        create("html") {
+            required.set(true)
+            outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main/spotbugs.html"))
+        }
+    }
 }
