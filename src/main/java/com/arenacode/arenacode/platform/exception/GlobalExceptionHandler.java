@@ -46,4 +46,13 @@ public class GlobalExceptionHandler {
     problemDetail.setType(URI.create("https://arenacode.dev/email-already-exists"));
     return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
   }
+
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ProblemDetail> handleIllegalState(IllegalStateException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error");
+    problemDetail.setTitle("Internal error");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+  }
 }
