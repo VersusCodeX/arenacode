@@ -56,7 +56,7 @@ class UserDomainTest {
   void hasRoleShouldReturnTrueWhenRoleExists() {
     User user = new User("Role User", UserStatus.ACTIVE, false);
     Role adminRole = new Role("ADMIN", "Administrator");
-    user.getRoles().add(adminRole);
+    user.addRole(adminRole);
 
     assertThat(user.hasRole("ADMIN")).isTrue();
     assertThat(user.hasRole("admin")).isTrue();

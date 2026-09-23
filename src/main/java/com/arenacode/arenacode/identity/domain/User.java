@@ -2,6 +2,7 @@ package com.arenacode.arenacode.identity.domain;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -168,8 +169,9 @@ public class User {
     this.deletedAt = deletedAt;
   }
 
+  /** Visão somente leitura; para adicionar papéis use {@link #addRole(Role)}. */
   public Set<Role> getRoles() {
-    return roles;
+    return Collections.unmodifiableSet(roles);
   }
 
   public void setRoles(Set<Role> roles) {

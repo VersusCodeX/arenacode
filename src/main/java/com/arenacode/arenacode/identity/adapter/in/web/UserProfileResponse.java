@@ -5,4 +5,9 @@ import java.util.Set;
 import java.util.UUID;
 
 public record UserProfileResponse(
-    UUID id, String email, String displayName, UserStatus status, Set<String> roles) {}
+    UUID id, String email, String displayName, UserStatus status, Set<String> roles) {
+
+  public UserProfileResponse {
+    roles = roles == null ? Set.of() : Set.copyOf(roles);
+  }
+}
