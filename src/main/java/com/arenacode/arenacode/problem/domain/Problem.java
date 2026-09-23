@@ -1,5 +1,6 @@
 package com.arenacode.arenacode.problem.domain;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -86,6 +87,11 @@ public class Problem {
 
   protected Problem() {}
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Entidade JPA não pode ser final; validar no construtor é intencional e o risco"
+              + " (finalizer attack) depende de finalize(), depreciado no Java (JEP 421).")
   public Problem(
       String slug, String title, String statement, Difficulty difficulty, UUID createdBy) {
     this.slug = validateSlug(slug);
