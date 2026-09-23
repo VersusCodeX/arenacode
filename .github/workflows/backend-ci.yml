@@ -15,6 +15,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Os testes de integracao usam o PostgreSQL em localhost:5432 (perfil test).
+    # Mesmas credenciais de desenvolvimento do docker-compose.yml; nao sao segredos.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: arenacode
+          POSTGRES_USER: arenacode
+          POSTGRES_PASSWORD: local-dev-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arenacode -d arenacode"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
