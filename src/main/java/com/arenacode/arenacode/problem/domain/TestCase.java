@@ -1,5 +1,6 @@
 package com.arenacode.arenacode.problem.domain;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -51,6 +52,11 @@ public class TestCase {
   protected TestCase() {}
 
   /** Criado apenas via {@link Problem#addTestCase}, que controla o ordinal. */
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Entidade JPA não pode ser final; validar no construtor é intencional e o risco"
+              + " (finalizer attack) depende de finalize(), depreciado no Java (JEP 421).")
   TestCase(
       Problem problem,
       int ordinal,
@@ -138,6 +144,11 @@ public class TestCase {
     return id;
   }
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Navegação intencional para o agregado raiz; alterações no Problem passam pelas"
+              + " regras dele.")
   public Problem getProblem() {
     return problem;
   }
