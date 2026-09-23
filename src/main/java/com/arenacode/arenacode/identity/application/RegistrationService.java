@@ -19,7 +19,9 @@ public class RegistrationService {
   private final PasswordEncoder passwordEncoder;
 
   public RegistrationService(
-      UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+      UserRepository userRepository,
+      RoleRepository roleRepository,
+      PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.passwordEncoder = passwordEncoder;

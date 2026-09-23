@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @ConfigurationPropertiesScan
 public class ArenacodeApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(ArenacodeApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(ArenacodeApplication.class, args);
+  }
 }

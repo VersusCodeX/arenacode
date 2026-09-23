@@ -1,18 +1,18 @@
 package com.arenacode.arenacode.identity.adapter.in.web;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import com.arenacode.arenacode.identity.adapter.out.persistence.RoleRepository;
 import com.arenacode.arenacode.identity.adapter.out.persistence.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.context.ActiveProfiles;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -20,18 +20,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class RegistrationIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
-    @Autowired
-    private RoleRepository roleRepository;
+  @Autowired private RoleRepository roleRepository;
 
-    @Test
-    void shouldRegisterUserAndReturn201() throws Exception {
-        String requestBody = """
+  @Test
+  void shouldRegisterUserAndReturn201() throws Exception {
+    String requestBody =
+        """
             {
                 "email": "newuser@example.com",
                 "password": "securepassword123",
@@ -39,22 +37,25 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("Location"))
-                .andExpect(jsonPath("$.email").value("newuser@example.com"))
-                .andExpect(jsonPath("$.displayName").value("New User"))
-                .andExpect(jsonPath("$.status").value("ACTIVE"))
-                .andExpect(jsonPath("$.preferredLanguage").value("JAVA_21"))
-                .andExpect(jsonPath("$.passwordHash").doesNotExist());
-    }
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isCreated())
+        .andExpect(header().exists("Location"))
+        .andExpect(jsonPath("$.email").value("newuser@example.com"))
+        .andExpect(jsonPath("$.displayName").value("New User"))
+        .andExpect(jsonPath("$.status").value("ACTIVE"))
+        .andExpect(jsonPath("$.preferredLanguage").value("JAVA_21"))
+        .andExpect(jsonPath("$.passwordHash").doesNotExist());
+  }
 
-    @Test
-    void shouldReturn409ForDuplicateEmail() throws Exception {
-        // First registration
-        String requestBody = """
+  @Test
+  void shouldReturn409ForDuplicateEmail() throws Exception {
+    // First registration
+    String requestBody =
+        """
             {
                 "email": "duplicate@example.com",
                 "password": "securepassword123",
@@ -62,13 +63,16 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isCreated());
 
-        // Second registration with same email
-        String requestBody2 = """
+    // Second registration with same email
+    String requestBody2 =
+        """
             {
                 "email": "duplicate@example.com",
                 "password": "anotherpassword123",
@@ -76,15 +80,18 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody2))
-                .andExpect(status().isConflict());
-    }
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody2))
+        .andExpect(status().isConflict());
+  }
 
-    @Test
-    void shouldReturn400ForInvalidEmail() throws Exception {
-        String requestBody = """
+  @Test
+  void shouldReturn400ForInvalidEmail() throws Exception {
+    String requestBody =
+        """
             {
                 "email": "invalid-email",
                 "password": "securepassword123",
@@ -92,15 +99,18 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
-    }
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isBadRequest());
+  }
 
-    @Test
-    void shouldReturn400ForShortPassword() throws Exception {
-        String requestBody = """
+  @Test
+  void shouldReturn400ForShortPassword() throws Exception {
+    String requestBody =
+        """
             {
                 "email": "test@example.com",
                 "password": "short",
@@ -108,15 +118,18 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
-    }
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isBadRequest());
+  }
 
-    @Test
-    void shouldReturn400ForShortDisplayName() throws Exception {
-        String requestBody = """
+  @Test
+  void shouldReturn400ForShortDisplayName() throws Exception {
+    String requestBody =
+        """
             {
                 "email": "test@example.com",
                 "password": "securepassword123",
@@ -124,9 +137,11 @@ class RegistrationIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
-    }
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+        .andExpect(status().isBadRequest());
+  }
 }

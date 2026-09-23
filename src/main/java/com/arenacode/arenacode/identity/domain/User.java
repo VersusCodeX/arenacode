@@ -35,7 +35,10 @@ public class User {
   private int currentRating;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "preferred_language", nullable = false, length = 30,
+  @Column(
+      name = "preferred_language",
+      nullable = false,
+      length = 30,
       columnDefinition = "VARCHAR(30) DEFAULT 'JAVA_21'")
   private ProgrammingLanguage preferredLanguage;
 
@@ -49,7 +52,8 @@ public class User {
   private Instant deletedAt;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "user_roles",
+  @JoinTable(
+      name = "user_roles",
       joinColumns = @JoinColumn(name = "user_id"),
       inverseJoinColumns = @JoinColumn(name = "role_id"))
   private Set<Role> roles = new HashSet<>();
@@ -76,32 +80,115 @@ public class User {
     updatedAt = Instant.now();
   }
 
-  public UUID getId() { return id; }
-  public void setId(UUID id) { this.id = id; }
-  public String getEmail() { return email; }
-  public void setEmail(String email) { this.email = email; }
-  public String getPasswordHash() { return passwordHash; }
-  public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
-  public String getDisplayName() { return displayName; }
-  public void setDisplayName(String displayName) { this.displayName = displayName; }
-  public UserStatus getStatus() { return status; }
-  public void setStatus(UserStatus status) { this.status = status; }
-  public boolean isGuest() { return guest; }
-  public void setGuest(boolean guest) { this.guest = guest; }
-  public int getCurrentRating() { return currentRating; }
-  public void setCurrentRating(int currentRating) { this.currentRating = currentRating; }
-  public ProgrammingLanguage getPreferredLanguage() { return preferredLanguage; }
-  public void setPreferredLanguage(ProgrammingLanguage preferredLanguage) { this.preferredLanguage = preferredLanguage; }
-  public Instant getCreatedAt() { return createdAt; }
-  public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-  public Instant getUpdatedAt() { return updatedAt; }
-  public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-  public Instant getDeletedAt() { return deletedAt; }
-  public void setDeletedAt(Instant deletedAt) { this.deletedAt = deletedAt; }
-  public Set<Role> getRoles() { return roles; }
-  public void setRoles(Set<Role> roles) { this.roles = new HashSet<>(roles); }
-  public void addRole(Role role) { roles.add(role); }
-  public boolean isActive() { return status == UserStatus.ACTIVE; }
-  public boolean canAuthenticate() { return isActive() && !guest && email != null; }
-  public boolean hasRole(String roleCode) { return roles.stream().anyMatch(role -> role.getCode().equalsIgnoreCase(roleCode)); }
+  public UUID getId() {
+    return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  public void setDisplayName(String displayName) {
+    this.displayName = displayName;
+  }
+
+  public UserStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(UserStatus status) {
+    this.status = status;
+  }
+
+  public boolean isGuest() {
+    return guest;
+  }
+
+  public void setGuest(boolean guest) {
+    this.guest = guest;
+  }
+
+  public int getCurrentRating() {
+    return currentRating;
+  }
+
+  public void setCurrentRating(int currentRating) {
+    this.currentRating = currentRating;
+  }
+
+  public ProgrammingLanguage getPreferredLanguage() {
+    return preferredLanguage;
+  }
+
+  public void setPreferredLanguage(ProgrammingLanguage preferredLanguage) {
+    this.preferredLanguage = preferredLanguage;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
+  }
+
+  public void setDeletedAt(Instant deletedAt) {
+    this.deletedAt = deletedAt;
+  }
+
+  public Set<Role> getRoles() {
+    return roles;
+  }
+
+  public void setRoles(Set<Role> roles) {
+    this.roles = new HashSet<>(roles);
+  }
+
+  public void addRole(Role role) {
+    roles.add(role);
+  }
+
+  public boolean isActive() {
+    return status == UserStatus.ACTIVE;
+  }
+
+  public boolean canAuthenticate() {
+    return isActive() && !guest && email != null;
+  }
+
+  public boolean hasRole(String roleCode) {
+    return roles.stream().anyMatch(role -> role.getCode().equalsIgnoreCase(roleCode));
+  }
 }
