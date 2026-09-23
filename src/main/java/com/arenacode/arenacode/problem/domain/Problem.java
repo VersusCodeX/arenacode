@@ -86,7 +86,8 @@ public class Problem {
 
   protected Problem() {}
 
-  public Problem(String slug, String title, String statement, Difficulty difficulty, UUID createdBy) {
+  public Problem(
+      String slug, String title, String statement, Difficulty difficulty, UUID createdBy) {
     this.slug = validateSlug(slug);
     this.createdBy = createdBy;
     this.status = ProblemStatus.DRAFT;
@@ -198,8 +199,13 @@ public class Problem {
     return status == ProblemStatus.PUBLISHED && hasEnabledPrivateTestCase();
   }
 
-  public boolean isPublished() { return status == ProblemStatus.PUBLISHED; }
-  public boolean isArchived() { return status == ProblemStatus.ARCHIVED; }
+  public boolean isPublished() {
+    return status == ProblemStatus.PUBLISHED;
+  }
+
+  public boolean isArchived() {
+    return status == ProblemStatus.ARCHIVED;
+  }
 
   void ensureEditable() {
     if (status == ProblemStatus.ARCHIVED) {
@@ -215,8 +221,7 @@ public class Problem {
     if (status != ProblemStatus.PUBLISHED || !testCase.isEnabled() || !testCase.isPrivate()) {
       return;
     }
-    long enabledPrivate =
-        testCases.stream().filter(tc -> tc.isEnabled() && tc.isPrivate()).count();
+    long enabledPrivate = testCases.stream().filter(tc -> tc.isEnabled() && tc.isPrivate()).count();
     if (enabledPrivate <= 1) {
       throw new IllegalStateException(
           "A published problem must keep at least one enabled PRIVATE test case");
@@ -248,9 +253,7 @@ public class Problem {
   }
 
   private static String validateSlug(String slug) {
-    if (slug == null
-        || slug.length() > MAX_SLUG_LENGTH
-        || !SLUG_PATTERN.matcher(slug).matches()) {
+    if (slug == null || slug.length() > MAX_SLUG_LENGTH || !SLUG_PATTERN.matcher(slug).matches()) {
       throw new IllegalArgumentException(
           "slug must be lowercase kebab-case (a-z, 0-9, '-') with at most "
               + MAX_SLUG_LENGTH
@@ -263,22 +266,75 @@ public class Problem {
     return value == null || value.isBlank() ? null : value;
   }
 
-  public UUID getId() { return id; }
-  public String getSlug() { return slug; }
-  public String getTitle() { return title; }
-  public String getStatement() { return statement; }
-  public String getInputSpecification() { return inputSpecification; }
-  public String getOutputSpecification() { return outputSpecification; }
-  public String getConstraintsDescription() { return constraintsDescription; }
-  public Difficulty getDifficulty() { return difficulty; }
-  public ProblemStatus getStatus() { return status; }
-  public int getTimeLimitMs() { return timeLimitMs; }
-  public int getMemoryLimitKb() { return memoryLimitKb; }
-  public UUID getCreatedBy() { return createdBy; }
-  public long getVersion() { return version; }
-  public Instant getCreatedAt() { return createdAt; }
-  public Instant getUpdatedAt() { return updatedAt; }
-  public Instant getPublishedAt() { return publishedAt; }
-  public Instant getArchivedAt() { return archivedAt; }
-  public List<TestCase> getTestCases() { return Collections.unmodifiableList(testCases); }
+  public UUID getId() {
+    return id;
+  }
+
+  public String getSlug() {
+    return slug;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public String getStatement() {
+    return statement;
+  }
+
+  public String getInputSpecification() {
+    return inputSpecification;
+  }
+
+  public String getOutputSpecification() {
+    return outputSpecification;
+  }
+
+  public String getConstraintsDescription() {
+    return constraintsDescription;
+  }
+
+  public Difficulty getDifficulty() {
+    return difficulty;
+  }
+
+  public ProblemStatus getStatus() {
+    return status;
+  }
+
+  public int getTimeLimitMs() {
+    return timeLimitMs;
+  }
+
+  public int getMemoryLimitKb() {
+    return memoryLimitKb;
+  }
+
+  public UUID getCreatedBy() {
+    return createdBy;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public Instant getPublishedAt() {
+    return publishedAt;
+  }
+
+  public Instant getArchivedAt() {
+    return archivedAt;
+  }
+
+  public List<TestCase> getTestCases() {
+    return Collections.unmodifiableList(testCases);
+  }
 }

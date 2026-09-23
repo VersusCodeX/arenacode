@@ -1,13 +1,7 @@
 package com.arenacode.arenacode.identity.config;
 
 import java.time.Duration;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.jwt")
-public record JwtConfig(
-        String secret,
-        String issuer,
-        Duration accessTokenTtl
-) {
-}
+public record JwtConfig(String secret, String issuer, Duration accessTokenTtl) {}

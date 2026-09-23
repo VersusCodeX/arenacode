@@ -96,10 +96,17 @@ public class TestCase {
     enabled = false;
   }
 
-  public boolean isPrivate() { return visibility == TestCaseVisibility.PRIVATE; }
-  public boolean isPublic() { return visibility == TestCaseVisibility.PUBLIC; }
+  public boolean isPrivate() {
+    return visibility == TestCaseVisibility.PRIVATE;
+  }
 
-  void setOrdinal(int ordinal) { this.ordinal = ordinal; }
+  public boolean isPublic() {
+    return visibility == TestCaseVisibility.PUBLIC;
+  }
+
+  void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
 
   private void applyContent(
       String input, String expectedOutput, TestCaseVisibility visibility, int weight) {
@@ -127,14 +134,43 @@ public class TestCase {
     }
   }
 
-  public UUID getId() { return id; }
-  public Problem getProblem() { return problem; }
-  public int getOrdinal() { return ordinal; }
-  public String getInput() { return input; }
-  public String getExpectedOutput() { return expectedOutput; }
-  public TestCaseVisibility getVisibility() { return visibility; }
-  public int getWeight() { return weight; }
-  public boolean isEnabled() { return enabled; }
-  public Instant getCreatedAt() { return createdAt; }
-  public Instant getUpdatedAt() { return updatedAt; }
+  public UUID getId() {
+    return id;
+  }
+
+  public Problem getProblem() {
+    return problem;
+  }
+
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  public String getInput() {
+    return input;
+  }
+
+  public String getExpectedOutput() {
+    return expectedOutput;
+  }
+
+  public TestCaseVisibility getVisibility() {
+    return visibility;
+  }
+
+  public int getWeight() {
+    return weight;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
 }

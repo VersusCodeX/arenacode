@@ -1,10 +1,16 @@
 package com.arenacode.arenacode.identity.application;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.arenacode.arenacode.identity.adapter.in.web.RegisterRequest;
 import com.arenacode.arenacode.identity.adapter.out.persistence.RoleRepository;
 import com.arenacode.arenacode.identity.adapter.out.persistence.UserRepository;
 import com.arenacode.arenacode.identity.domain.Role;
 import com.arenacode.arenacode.identity.domain.User;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,65 +18,56 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class RegistrationServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock private UserRepository userRepository;
 
-    @Mock
-    private RoleRepository roleRepository;
+  @Mock private RoleRepository roleRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+  @Mock private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
-    private RegistrationService registrationService;
+  @InjectMocks private RegistrationService registrationService;
 
-    @Test
-    void shouldRegisterUserWithValidData() {
-        // Given
-        RegisterRequest request = new RegisterRequest("test@example.com", "password123456", "Test User");
-        Role userRole = new Role("USER", "Regular user");
-        userRole.setId(UUID.randomUUID());
+  @Test
+  void shouldRegisterUserWithValidData() {
+    // Given
+    RegisterRequest request =
+        new RegisterRequest("test@example.com", "password123456", "Test User");
+    Role userRole = new Role("USER", "Regular user");
+    userRole.setId(UUID.randomUUID());
 
-        // ORDEM IMPORTANTE: configurar TODOS os mocks antes de chamar o serviço
-        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-        when(roleRepository.findByCode("USER")).thenReturn(Optional.of(userRole));
-        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$encodedHash");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    // ORDEM IMPORTANTE: configurar TODOS os mocks antes de chamar o serviço
+    when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
+    when(roleRepository.findByCode("USER")).thenReturn(Optional.of(userRole));
+    when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$encodedHash");
+    when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
-        var response = registrationService.register(request);
+    // When
+    var response = registrationService.register(request);
 
-        // Then
-        assertThat(response).isNotNull();
-        assertThat(response.email()).isEqualTo("test@example.com");
-        assertThat(response.displayName()).isEqualTo("Test User");
-        verify(userRepository).save(any(User.class));
-        verify(passwordEncoder).encode("password123456");
-    }
+    // Then
+    assertThat(response).isNotNull();
+    assertThat(response.email()).isEqualTo("test@example.com");
+    assertThat(response.displayName()).isEqualTo("Test User");
+    verify(userRepository).save(any(User.class));
+    verify(passwordEncoder).encode("password123456");
+  }
 
-    @Test
-    void shouldThrowEmailAlreadyExistsException() {
-        // Given
-        RegisterRequest request = new RegisterRequest("existing@example.com", "password123456", "Test User");
+  @Test
+  void shouldThrowEmailAlreadyExistsException() {
+    // Given
+    RegisterRequest request =
+        new RegisterRequest("existing@example.com", "password123456", "Test User");
 
-        // Configurar mock ANTES de executar
-        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
+    // Configurar mock ANTES de executar
+    when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
 
-        // When/Then
-        assertThatThrownBy(() -> registrationService.register(request))
-                .isInstanceOf(EmailAlreadyExistsException.class);
+    // When/Then
+    assertThatThrownBy(() -> registrationService.register(request))
+        .isInstanceOf(EmailAlreadyExistsException.class);
 
-        // Verificar que save NÃO foi chamado
-        verify(userRepository, never()).save(any(User.class));
-    }
+    // Verificar que save NÃO foi chamado
+    verify(userRepository, never()).save(any(User.class));
+  }
 }

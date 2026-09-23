@@ -14,65 +14,63 @@ import java.util.UUID;
 @Table(name = "roles")
 public class Role {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid DEFAULT gen_random_uuid()")
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(columnDefinition = "uuid DEFAULT gen_random_uuid()")
+  private UUID id;
 
-    @Column(nullable = false, unique = true, length = 30)
-    private String code;
+  @Column(nullable = false, unique = true, length = 30)
+  private String code;
 
-    @Column(nullable = false, length = 255)
-    private String description;
+  @Column(nullable = false, length = 255)
+  private String description;
 
-    @Column(name = "created_at", nullable = false,
-            columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
-    private Instant createdAt;
+  @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
+  private Instant createdAt;
 
-    protected Role() {
+  protected Role() {}
+
+  public Role(String code) {
+    this(code, code);
+  }
+
+  public Role(String code, String description) {
+    this.code = code;
+    this.description = description;
+  }
+
+  @PrePersist
+  void onCreate() {
+    if (createdAt == null) {
+      createdAt = Instant.now();
     }
+  }
 
-    public Role(String code) {
-        this(code, code);
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public Role(String code, String description) {
-        this.code = code;
-        this.description = description;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = Instant.now();
-        }
-    }
+  public String getCode() {
+    return code;
+  }
 
-    public UUID getId() {
-        return id;
-    }
+  public String getDescription() {
+    return description;
+  }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  public void setDescription(String description) {
+    this.description = description;
+  }
 
-    public String getCode() {
-        return code;
-    }
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
 }

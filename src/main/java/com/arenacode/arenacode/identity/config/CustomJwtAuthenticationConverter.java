@@ -14,18 +14,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthenticationToken> {
 
-    @Override
-    public JwtAuthenticationToken convert(Jwt jwt) {
-        List<String> roles = jwt.getClaimAsStringList("roles");
-        Collection<GrantedAuthority> authorities;
-        if (roles == null || roles.isEmpty()) {
-            authorities = new ArrayList<>();
-        } else {
-            authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-                .collect(Collectors.toList());
-        }
-        String subject = jwt.getSubject();
-        return new JwtAuthenticationToken(jwt, authorities, subject);
+  @Override
+  public JwtAuthenticationToken convert(Jwt jwt) {
+    List<String> roles = jwt.getClaimAsStringList("roles");
+    Collection<GrantedAuthority> authorities;
+    if (roles == null || roles.isEmpty()) {
+      authorities = new ArrayList<>();
+    } else {
+      authorities =
+          roles.stream()
+              .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+              .collect(Collectors.toList());
     }
+    String subject = jwt.getSubject();
+    return new JwtAuthenticationToken(jwt, authorities, subject);
+  }
 }
