@@ -20,7 +20,7 @@ Badge de status no topo do [README.md](../../README.md).
 ## Checks executados
 
 1. **Spotless** (`./gradlew spotlessCheck`) — valida formatacao do codigo.
-2. **Testes** (`./gradlew test`) — testes unitarios e de integracao (Testcontainers).
+2. **Testes** (`./gradlew test`) — testes unitarios e de integracao (PostgreSQL do service container).
 3. **SpotBugs** (`./gradlew spotbugsMain`) — analise estatica de bugs.
 4. **Build JAR** (`./gradlew bootJar`) — valida que o projeto compila e gera artefato executavel.
 
@@ -37,12 +37,12 @@ O comando `check` executa internamente `spotlessCheck`, `spotbugsMain` e `test`.
 - Runner: `ubuntu-latest`
 - JDK: 21 (Temurin)
 - Cache: Gradle (habilitado via `actions/setup-java`)
-- Docker: disponivel no runner (necessario para Testcontainers)
+- PostgreSQL: service container `postgres:16-alpine` em `localhost:5432`
 - Gradle Wrapper: validado com `gradle/actions/wrapper-validation@v4`
 
-## Testcontainers
+## Banco de dados nos testes
 
-O runner do GitHub Actions ja inclui Docker. Os testes de integracao usam Testcontainers para subir PostgreSQL e outros servicos sob demanda — **nao e necessario** declarar servicos no YAML do workflow.
+Os testes de integracao usam o perfil `test`, que conecta em um PostgreSQL em `localhost:5432` com as credenciais de desenvolvimento do `docker-compose.yml`. No CI, esse banco e um service container declarado no workflow, com health check para os testes so comecarem quando ele estiver pronto. Localmente, use o PostgreSQL do `docker-compose.yml`.
 
 ## Artefatos (em caso de falha)
 
@@ -56,7 +56,7 @@ Para baixar: acesse a execucao do workflow no GitHub → secao "Artifacts".
 
 ## Reproduzir localmente
 
-Para validar antes de push:
+Para validar antes de push (com o PostgreSQL do `docker-compose.yml` rodando, necessario para os testes):
 
 ```bash
 # Formatacao
