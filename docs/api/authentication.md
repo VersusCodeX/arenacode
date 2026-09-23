@@ -15,7 +15,18 @@ A API ArenaCode usa tokens JWT Bearer para autenticação stateless.
 
 **Response 200:**
 ```json
-{"accessToken": "eyJhbG...", "tokenType": "Bearer", "expiresIn": 900, "id": "uuid", "email": "usuario@exemplo.com", "displayName": "Usuario", "status": "ACTIVE", "roles": ["USER"]}
+{
+  "accessToken": "eyJhbG...",
+  "tokenType": "Bearer",
+  "expiresIn": 900,
+  "user": {
+    "id": "uuid",
+    "email": "usuario@exemplo.com",
+    "displayName": "Usuario",
+    "status": "ACTIVE",
+    "roles": ["USER"]
+  }
+}
 ```
 
 **Respostas de erro:**
@@ -45,7 +56,6 @@ Retorna perfil do usuário autenticado.
 - `iss`: issuer (ex: arenacode.dev)
 - `iat`: issue time
 - `exp`: expiração (15 min)
-- `email`: e-mail
 - `displayName`: nome
 - `roles`: ["USER", ...]
 

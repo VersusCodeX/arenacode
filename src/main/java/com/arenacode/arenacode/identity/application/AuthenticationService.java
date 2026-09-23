@@ -48,7 +48,7 @@ public class AuthenticationService {
         Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
         String accessToken = createAccessToken(user.getId(), user.getDisplayName(), roleCodes);
         long ttlSeconds = jwtConfig.accessTokenTtl().toSeconds();
-        return new LoginResponse(accessToken, "Bearer", ttlSeconds, user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
+        return new LoginResponse(accessToken, "Bearer", ttlSeconds, toProfile(user, roleCodes));
     }
 
     @Transactional(readOnly = true)
@@ -70,14 +70,12 @@ public class AuthenticationService {
                 .orElseThrow(() -> new AuthenticationException("User not found"));
 
         Set<String> roleCodes = user.getRoles().stream().map(r -> r.getCode()).collect(Collectors.toSet());
+        return toProfile(user, roleCodes);
+    }
 
-
+    private UserProfileResponse toProfile(User user, Set<String> roleCodes) {
         return new UserProfileResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getStatus(),
-                roleCodes);
+                user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus(), roleCodes);
     }
 
     private String createAccessToken(UUID userId, String displayName, Set<String> roles) {

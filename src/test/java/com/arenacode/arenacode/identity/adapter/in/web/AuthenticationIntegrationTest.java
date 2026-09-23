@@ -20,7 +20,7 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,8 +55,7 @@ class AuthenticationIntegrationTest {
     @Autowired
     private JwtEncoder jwtEncoder;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private User testUser;
     private Role userRole;
@@ -86,15 +85,15 @@ class AuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(900))
-                .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$.roles[0]").value("USER"));
+                .andExpect(jsonPath("$.user.email").value("test@example.com"))
+                .andExpect(jsonPath("$.user.roles[0]").value("USER"));
     }
 
     @Test
     void issuedTokenIsValidAndUsableOnProtectedRoute() throws Exception {
         String token = login("test@example.com", RAW_PASSWORD);
 
-        mockMvc.perform(get("/api/v1/auth/me")
+        mockMvc.perform(get("/api/v1/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("test@example.com"));
@@ -172,11 +171,11 @@ class AuthenticationIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ---------- GET /api/v1/auth/me ----------
+    // ---------- GET /api/v1/me ----------
 
     @Test
     void meWithoutTokenReturns401() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me"))
+        mockMvc.perform(get("/api/v1/me"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -184,7 +183,7 @@ class AuthenticationIntegrationTest {
     void meWithValidTokenReturnsUserProfile() throws Exception {
         String token = login("test@example.com", RAW_PASSWORD);
 
-        mockMvc.perform(get("/api/v1/auth/me")
+        mockMvc.perform(get("/api/v1/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(testUser.getId().toString()))
@@ -196,14 +195,14 @@ class AuthenticationIntegrationTest {
 
     @Test
     void meWithMalformedTokenReturns401() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me")
+        mockMvc.perform(get("/api/v1/me")
                         .header("Authorization", "Bearer not-a-real-jwt"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void meWithExpiredTokenReturns401() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me")
+        mockMvc.perform(get("/api/v1/me")
                         .header("Authorization", "Bearer " + expiredTokenFor(testUser)))
                 .andExpect(status().isUnauthorized());
     }
