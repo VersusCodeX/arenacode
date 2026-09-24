@@ -91,14 +91,18 @@ class ProblemCatalogPersistenceIntegrationTest {
         Problem problem = problemRepository.saveAndFlush(newProblem("ordinal-unique"));
 
         assertThatThrownBy(
-                () ->
+                () -> {
                     entityManager
                         .createNativeQuery(
                             "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
                                 + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
                                 + " 'PUBLIC', 1, true)")
                         .setParameter("problemId", problem.getId())
-                        .executeUpdate())
+                        .executeUpdate();
+                    // A constraint declared DEFERRABLE INITIALLY DEFERRED is checked at flush/commit,
+                    // not at executeUpdate().
+                    entityManager.flush();
+                })
             .isInstanceOf(RuntimeException.class);
     }
 
