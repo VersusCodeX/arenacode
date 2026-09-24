@@ -9,7 +9,7 @@ Este documento descreve o modelo lgico do banco de dados do ArenaCode.
 Armazena usurios da plataforma, incluindo convidados e usurios registrados.
 
 | Coluna             | Tipo          | Restries                                     |
-|--------------------|---------------|------------------------------------------------|
+|--------------------|---------------|--------------------------------------------------|
 | id                 | UUID          | PRIMARY KEY, DEFAULT gen_random_uuid()         |
 | email              | CITEXT        | UNIQUE (NULLs mltiplos permitidos)            |
 | password_hash      | VARCHAR(255)  | NULL                                           |
@@ -45,7 +45,7 @@ Pap is de autorizao do sistema.
 Associao muitos-para-muitos entre usurios e pap is.
 
 | Coluna    | Tipo        | Restries                               |
-|-----------|-------------|------------------------------------------|
+|-----------|-------------|--------------------------------------------|
 | user_id   | UUID        | NOT NULL, FK → users(id), ON DELETE CASCADE |
 | role_id   | UUID        | NOT NULL, FK → roles(id), ON DELETE CASCADE |
 | granted_at| TIMESTAMPTZ | NOT NULL, DEFAULT NOW()                  |
@@ -72,8 +72,8 @@ Catálogo de problemas de programação usados nas partidas.
 | constraints_description | TEXT         | NULL                                                        |
 | difficulty              | VARCHAR(20)  | NOT NULL, CHECK (EASY, MEDIUM, HARD, EXPERT)                |
 | status                  | VARCHAR(20)  | NOT NULL, DEFAULT 'DRAFT', CHECK (DRAFT, PUBLISHED, ARCHIVED) |
-| time_limit_ms           | INTEGER      | NOT NULL, DEFAULT 2000, CHECK 100..10000                    |
-| memory_limit_kb         | INTEGER      | NOT NULL, DEFAULT 262144, CHECK 16384..1048576              |
+| time_limit_ms           | INTEGER      | NOT NULL, DEFAULT 2000, CHECK 100..60000 (ver V4)           |
+| memory_limit_kb         | INTEGER      | NOT NULL, DEFAULT 262144, CHECK 16384..2097152 (ver V4)     |
 | created_by              | UUID         | NULL, FK → users(id), ON DELETE SET NULL                    |
 | version                 | BIGINT       | NOT NULL, DEFAULT 0 (locking otimista)                      |
 | created_at              | TIMESTAMPTZ  | NOT NULL, DEFAULT NOW()                                     |
@@ -84,10 +84,16 @@ Catálogo de problemas de programação usados nas partidas.
 **Constraints adicionais:**
 - Se `status = 'PUBLISHED'`, então `published_at` é obrigatório.
 - Se `status = 'ARCHIVED'`, então `archived_at` é obrigatório.
+- `time_limit_ms` e `memory_limit_kb` tiveram seus limites máximos ampliados pela migration
+  `V4__problem_tags.sql` (100..60000 ms e 16384..2097152 KB), acompanhando as constantes
+  `Problem.MAX_TIME_LIMIT_MS` / `Problem.MAX_MEMORY_LIMIT_KB`. A `V3__problem_catalog.sql`
+  original criou os limites mais estreitos (100..10000 / 16384..1048576) e permanece imutável.
 
 **Índices:**
 - `problems_status_difficulty_idx` em `(status, difficulty)`.
 - `problems_created_by_idx` em `created_by`.
+- `problems_published_difficulty_date_idx` em `(difficulty, published_at DESC)`, parcial
+  (`WHERE status = 'PUBLISHED'`), para listar o catálogo público por dificuldade e data.
 
 ### test_cases
 
@@ -109,8 +115,49 @@ Casos de teste de um problema. `PUBLIC` são exemplos exibidos ao jogador; `PRIV
 **Constraints adicionais:**
 - `(problem_id, ordinal)` único, `DEFERRABLE INITIALLY DEFERRED` para permitir reordenação na mesma transação.
 
+**Índices:**
+- `test_cases_problem_ordinal_unique` (constraint) cobre buscas por `problem_id`.
+- `test_cases_problem_enabled_ordinal_idx` em `(problem_id, enabled, ordinal)`, usado pelo
+  julgamento para buscar os casos habilitados de um problema em ordem.
+
+### tags
+
+Tags de classificação livre de problemas (ex.: "grafos", "programacao dinamica").
+
+| Coluna          | Tipo        | Restrições                                       |
+|-----------------|-------------|---------------------------------------------------|
+| id              | UUID         | PRIMARY KEY, DEFAULT gen_random_uuid()             |
+| name            | VARCHAR(80) | NOT NULL, CHECK não vazio                          |
+| normalized_name | VARCHAR(80) | NOT NULL, UNIQUE                                   |
+| created_at      | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()                            |
+
+`normalized_name` é derivado de `name` (lowercase, sem espaços nas pontas) pela entidade `Tag`, o
+que garante que "Grafos", "grafos" e "GRAFOS" não possam coexistir como tags distintas.
+
+### problem_tags
+
+Associação muitos-para-muitos entre `problems` e `tags`.
+
+| Coluna     | Tipo | Restrições                                          |
+|------------|------|------------------------------------------------------|
+| problem_id | UUID | NOT NULL, FK → problems(id), ON DELETE CASCADE        |
+| tag_id     | UUID | NOT NULL, FK → tags(id), ON DELETE RESTRICT           |
+| PRIMARY KEY | (problem_id, tag_id) |                                       |
+
+`ON DELETE RESTRICT` em `tag_id` impede remover uma tag ainda associada a problemas — diferente de
+`problems`, que ao ser removido apaga suas associações em cascata.
+
+**Índices:**
+- `problem_tags_tag_id_idx` em `tag_id`, para consultas "quais problemas têm esta tag".
+
 **Regras de domínio (aplicadas na entidade `Problem`):**
-- Apenas problemas `DRAFT` podem ser publicados, e somente com pelo menos um caso `PRIVATE` habilitado.
-- Um problema `PUBLISHED` não pode ficar sem caso `PRIVATE` habilitado (remover, desabilitar ou tornar público o último é bloqueado).
-- Problemas `ARCHIVED` não podem ser alterados.
-- Apenas problemas `PUBLISHED` com caso `PRIVATE` habilitado podem ser usados em partidas.
+- Apenas problemas `DRAFT` podem ser publicados, e somente com pelo menos um caso `PUBLIC`
+  habilitado (exemplo para o jogador) **e** um caso `PRIVATE` habilitado (usado pelo julgamento) —
+  ver `Problem.canBePublished()`, `hasEnabledPublicTestCase()` e `hasEnabledPrivateTestCase()`.
+- Um problema `PUBLISHED` não pode ficar sem caso `PRIVATE` habilitado (remover, desabilitar ou
+  tornar público o último é bloqueado).
+- Problemas `ARCHIVED` não podem ser alterados (inclui tags e test cases).
+- Apenas problemas `PUBLISHED` com caso `PRIVATE` habilitado podem ser usados em partidas
+  (`canBeUsedInMatch()`).
+- Conteúdo de test case `PRIVATE` nunca é exposto por esta camada — não há endpoint no módulo
+  `problem` nesta versão (apenas domínio e persistência).

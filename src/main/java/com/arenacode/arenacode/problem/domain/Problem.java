@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -17,10 +20,10 @@ public class Problem {
   public static final int MAX_TITLE_LENGTH = 150;
   public static final int DEFAULT_TIME_LIMIT_MS = 2000;
   public static final int MIN_TIME_LIMIT_MS = 100;
-  public static final int MAX_TIME_LIMIT_MS = 10_000;
+  public static final int MAX_TIME_LIMIT_MS = 60_000;
   public static final int DEFAULT_MEMORY_LIMIT_KB = 262_144;
   public static final int MIN_MEMORY_LIMIT_KB = 16_384;
-  public static final int MAX_MEMORY_LIMIT_KB = 1_048_576;
+  public static final int MAX_MEMORY_LIMIT_KB = 2_097_152;
 
   private static final Pattern SLUG_PATTERN = Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*$");
 
@@ -85,6 +88,13 @@ public class Problem {
   @OrderBy("ordinal ASC")
   private List<TestCase> testCases = new ArrayList<>();
 
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+      name = "problem_tags",
+      joinColumns = @JoinColumn(name = "problem_id"),
+      inverseJoinColumns = @JoinColumn(name = "tag_id"))
+  private Set<Tag> tags = new HashSet<>();
+
   protected Problem() {}
 
   @SuppressFBWarnings(
@@ -114,8 +124,6 @@ public class Problem {
     updatedAt = Instant.now();
   }
 
-  // ---- Edicao ----
-
   public void updateDetails(String title, String statement, Difficulty difficulty) {
     ensureEditable();
     applyDetails(title, statement, difficulty);
@@ -143,7 +151,22 @@ public class Problem {
     this.memoryLimitKb = memoryLimitKb;
   }
 
-  // ---- Casos de teste ----
+  public void addTag(Tag tag) {
+    ensureEditable();
+    tags.add(Objects.requireNonNull(tag, "tag must not be null"));
+  }
+
+  public void removeTag(Tag tag) {
+    ensureEditable();
+    tags.remove(tag);
+  }
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification = "Visão somente leitura; alterações passam por addTag/removeTag.")
+  public Set<Tag> getTags() {
+    return Collections.unmodifiableSet(tags);
+  }
 
   public TestCase addTestCase(
       String input, String expectedOutput, TestCaseVisibility visibility, int weight) {
@@ -164,12 +187,10 @@ public class Problem {
     renumberTestCases();
   }
 
-  /** Casos exibidos ao jogador como exemplos. */
   public List<TestCase> getPublicExamples() {
     return testCases.stream().filter(tc -> tc.isEnabled() && tc.isPublic()).toList();
   }
 
-  /** Casos executados pelo julgamento de uma submissao. */
   public List<TestCase> getEnabledTestCases() {
     return testCases.stream().filter(TestCase::isEnabled).toList();
   }
@@ -178,15 +199,22 @@ public class Problem {
     return testCases.stream().anyMatch(tc -> tc.isEnabled() && tc.isPrivate());
   }
 
-  // ---- Ciclo de vida ----
+  public boolean hasEnabledPublicTestCase() {
+    return testCases.stream().anyMatch(tc -> tc.isEnabled() && tc.isPublic());
+  }
+
+  public boolean canBePublished() {
+    return hasEnabledPublicTestCase() && hasEnabledPrivateTestCase();
+  }
 
   public void publish() {
     if (status != ProblemStatus.DRAFT) {
       throw new IllegalStateException("Only DRAFT problems can be published");
     }
-    if (!hasEnabledPrivateTestCase()) {
+    if (!canBePublished()) {
       throw new IllegalStateException(
-          "Problem must have at least one enabled PRIVATE test case to be published");
+          "Problem must have at least one enabled PUBLIC and one enabled PRIVATE test case to be"
+              + " published");
     }
     status = ProblemStatus.PUBLISHED;
     publishedAt = Instant.now();
@@ -200,7 +228,6 @@ public class Problem {
     archivedAt = Instant.now();
   }
 
-  /** Apenas problemas publicados, com caso privado habilitado, podem ser usados em partidas. */
   public boolean canBeUsedInMatch() {
     return status == ProblemStatus.PUBLISHED && hasEnabledPrivateTestCase();
   }
@@ -219,10 +246,6 @@ public class Problem {
     }
   }
 
-  /**
-   * Impede que um problema publicado fique sem caso privado habilitado ao remover, desabilitar ou
-   * tornar publico o caso informado.
-   */
   void ensureCanLoseEnabledPrivateCase(TestCase testCase) {
     if (status != ProblemStatus.PUBLISHED || !testCase.isEnabled() || !testCase.isPrivate()) {
       return;
@@ -272,75 +295,22 @@ public class Problem {
     return value == null || value.isBlank() ? null : value;
   }
 
-  public UUID getId() {
-    return id;
-  }
-
-  public String getSlug() {
-    return slug;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public String getStatement() {
-    return statement;
-  }
-
-  public String getInputSpecification() {
-    return inputSpecification;
-  }
-
-  public String getOutputSpecification() {
-    return outputSpecification;
-  }
-
-  public String getConstraintsDescription() {
-    return constraintsDescription;
-  }
-
-  public Difficulty getDifficulty() {
-    return difficulty;
-  }
-
-  public ProblemStatus getStatus() {
-    return status;
-  }
-
-  public int getTimeLimitMs() {
-    return timeLimitMs;
-  }
-
-  public int getMemoryLimitKb() {
-    return memoryLimitKb;
-  }
-
-  public UUID getCreatedBy() {
-    return createdBy;
-  }
-
-  public long getVersion() {
-    return version;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
-
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
-
-  public Instant getPublishedAt() {
-    return publishedAt;
-  }
-
-  public Instant getArchivedAt() {
-    return archivedAt;
-  }
-
-  public List<TestCase> getTestCases() {
-    return Collections.unmodifiableList(testCases);
-  }
+  public UUID getId() { return id; }
+  public String getSlug() { return slug; }
+  public String getTitle() { return title; }
+  public String getStatement() { return statement; }
+  public String getInputSpecification() { return inputSpecification; }
+  public String getOutputSpecification() { return outputSpecification; }
+  public String getConstraintsDescription() { return constraintsDescription; }
+  public Difficulty getDifficulty() { return difficulty; }
+  public ProblemStatus getStatus() { return status; }
+  public int getTimeLimitMs() { return timeLimitMs; }
+  public int getMemoryLimitKb() { return memoryLimitKb; }
+  public UUID getCreatedBy() { return createdBy; }
+  public long getVersion() { return version; }
+  public Instant getCreatedAt() { return createdAt; }
+  public Instant getUpdatedAt() { return updatedAt; }
+  public Instant getPublishedAt() { return publishedAt; }
+  public Instant getArchivedAt() { return archivedAt; }
+  public List<TestCase> getTestCases() { return Collections.unmodifiableList(testCases); }
 }
