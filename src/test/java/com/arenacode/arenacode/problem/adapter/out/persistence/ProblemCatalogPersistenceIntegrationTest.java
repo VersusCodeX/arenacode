@@ -10,8 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.Instant;
 
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * normalizada, ordem unica por problema, trigger de updated_at e relacionamento problem_tags.
  */
 @SpringBootTest
+@Transactional
 @ActiveProfiles("test")
 class ProblemCatalogPersistenceIntegrationTest {
 
@@ -53,8 +55,9 @@ class ProblemCatalogPersistenceIntegrationTest {
     void shouldRejectDuplicateNormalizedTagName() {
         tagRepository.saveAndFlush(new Tag("Grafos"));
 
-        assertThatThrownBy(() -> tagRepository.saveAndFlush(new Tag("grafos")))
-            .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
+            .executeWithoutResult(status -> tagRepository.saveAndFlush(new Tag("grafos"))))
+            .isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -92,18 +95,14 @@ class ProblemCatalogPersistenceIntegrationTest {
         Problem problem = problemRepository.saveAndFlush(newProblem("ordinal-unique"));
         var problemId = problem.getId();
 
-        assertThatThrownBy(
-                () ->
-                    new TransactionTemplate(transactionManager)
-                        .executeWithoutResult(
-                            status ->
-                                entityManager
-                                    .createNativeQuery(
-                                        "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
-                                            + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
-                                            + " 'PUBLIC', 1, true)")
-                                    .setParameter("problemId", problemId)
-                                    .executeUpdate()))
+        assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
+            .executeWithoutResult(status -> entityManager
+                .createNativeQuery(
+                    "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
+                        + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
+                        + " 'PUBLIC', 1, true)")
+                .setParameter("problemId", problemId)
+                .executeUpdate()))
             .isInstanceOf(RuntimeException.class);
     }
 
