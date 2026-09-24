@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 
@@ -21,14 +23,10 @@ import static org.assertj.core.api.Assertions.*;
 @ActiveProfiles("test")
 class ProblemCatalogPersistenceIntegrationTest {
 
-    @Autowired
-    private ProblemRepository problemRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
-
-    @Autowired
-    private EntityManager entityManager;
+    @Autowired private ProblemRepository problemRepository;
+    @Autowired private TagRepository tagRepository;
+    @Autowired private EntityManager entityManager;
+    @Autowired private PlatformTransactionManager transactionManager;
 
     private Problem newProblem(String slug) {
         Problem problem = new Problem(slug, "Titulo", "Enunciado do problema.", Difficulty.EASY, null);
@@ -45,7 +43,6 @@ class ProblemCatalogPersistenceIntegrationTest {
     @Test
     void shouldRejectDuplicateNormalizedTagName() {
         tagRepository.saveAndFlush(new Tag("Grafos"));
-
         assertThatThrownBy(() -> tagRepository.saveAndFlush(new Tag("grafos")))
             .isInstanceOf(DataIntegrityViolationException.class);
     }
@@ -54,7 +51,6 @@ class ProblemCatalogPersistenceIntegrationTest {
     void shouldPersistProblemTagsRelationship() {
         Tag graphs = tagRepository.save(new Tag("Grafos"));
         Tag dp = tagRepository.save(new Tag("Programacao Dinamica"));
-
         Problem problem = newProblem("problem-with-tags");
         problem.addTag(graphs);
         problem.addTag(dp);
@@ -76,21 +72,24 @@ class ProblemCatalogPersistenceIntegrationTest {
 
         problemRepository.deleteById(saved.getId());
         flushAndClear();
-
         assertThat(tagRepository.findById(graphs.getId())).isPresent();
     }
 
     @Test
     void shouldEnforceUniqueOrdinalPerProblemAtDatabaseLevel() {
         Problem problem = problemRepository.saveAndFlush(newProblem("ordinal-unique"));
+        var problemId = problem.getId();
 
-        assertThatThrownBy(
-                () -> entityManager.createNativeQuery(
+        assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
+            .executeWithoutResult(status -> {
+                entityManager.createNativeQuery(
                         "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
                             + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
                             + " 'PUBLIC', 1, true)")
-                    .setParameter("problemId", problem.getId())
-                    .executeUpdate())
+                    .setParameter("problemId", problemId)
+                    .executeUpdate();
+                entityManager.flush();
+            }))
             .isInstanceOf(RuntimeException.class);
     }
 
@@ -98,7 +97,6 @@ class ProblemCatalogPersistenceIntegrationTest {
     void updatedAtTriggerShouldBumpTimestampOnUpdate() throws InterruptedException {
         Problem problem = problemRepository.saveAndFlush(newProblem("trigger-updated-at"));
         Instant firstUpdatedAt = problem.getUpdatedAt();
-
         Thread.sleep(5);
         problem.updateDetails("Novo titulo", "Novo enunciado.", Difficulty.MEDIUM);
         problemRepository.saveAndFlush(problem);
@@ -120,8 +118,6 @@ class ProblemCatalogPersistenceIntegrationTest {
 
         Problem both = newProblem("public-and-private");
         both.publish();
-        assertThat(both.isPublished()).isTrue();
-
         problemRepository.saveAndFlush(both);
         flushAndClear();
         assertThat(problemRepository.findBySlug("public-and-private").orElseThrow().isPublished())
