@@ -80,17 +80,18 @@ class ProblemCatalogPersistenceIntegrationTest {
         Problem problem = problemRepository.saveAndFlush(newProblem("ordinal-unique"));
         var problemId = problem.getId();
 
-        assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
-            .executeWithoutResult(status -> {
-                entityManager.createNativeQuery(
-                        "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
-                            + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
-                            + " 'PUBLIC', 1, true)")
-                    .setParameter("problemId", problemId)
-                    .executeUpdate();
-                entityManager.flush();
-            }))
-            .isInstanceOf(RuntimeException.class);
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehaviorName("PROPAGATION_REQUIRES_NEW");
+
+        assertThatThrownBy(() -> template.executeWithoutResult(status -> {
+            entityManager.createNativeQuery(
+                    "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
+                        + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
+                        + " 'PUBLIC', 1, true)")
+                .setParameter("problemId", problemId)
+                .executeUpdate();
+            entityManager.flush();
+        })).isInstanceOf(RuntimeException.class);
     }
 
     @Test
