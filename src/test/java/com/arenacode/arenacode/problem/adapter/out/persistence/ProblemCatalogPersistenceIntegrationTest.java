@@ -10,20 +10,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Cobre as constraints SQL introduzidas por V3__problem_catalog.sql e V4__problem_tags.sql que
- * nao sao (ou nao podem ser) exercitadas apenas pelas regras de dominio em memoria: unicidade de
- * tag normalizada, ordem unica por problema no banco, trigger de updated_at e o relacionamento
- * problem_tags. Roda contra Postgres real via Testcontainers (perfil "test").
+ * Cobre constraints SQL de V4 com PostgreSQL real via Testcontainers: unicidade de tag
+ * normalizada, ordem unica por problema, trigger de updated_at e relacionamento problem_tags.
  */
 @SpringBootTest
-@Transactional
 @ActiveProfiles("test")
 class ProblemCatalogPersistenceIntegrationTest {
 
@@ -35,6 +33,9 @@ class ProblemCatalogPersistenceIntegrationTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private Problem newProblem(String slug) {
         Problem problem = new Problem(slug, "Titulo", "Enunciado do problema.", Difficulty.EASY, null);
@@ -89,20 +90,20 @@ class ProblemCatalogPersistenceIntegrationTest {
     @Test
     void shouldEnforceUniqueOrdinalPerProblemAtDatabaseLevel() {
         Problem problem = problemRepository.saveAndFlush(newProblem("ordinal-unique"));
+        var problemId = problem.getId();
 
         assertThatThrownBy(
-                () -> {
-                    entityManager
-                        .createNativeQuery(
-                            "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
-                                + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
-                                + " 'PUBLIC', 1, true)")
-                        .setParameter("problemId", problem.getId())
-                        .executeUpdate();
-                    // A constraint declared DEFERRABLE INITIALLY DEFERRED is checked at flush/commit,
-                    // not at executeUpdate().
-                    entityManager.flush();
-                })
+                () ->
+                    new TransactionTemplate(transactionManager)
+                        .executeWithoutResult(
+                            status ->
+                                entityManager
+                                    .createNativeQuery(
+                                        "INSERT INTO test_cases (problem_id, ordinal, input, expected_output,"
+                                            + " visibility, weight, enabled) VALUES (:problemId, 1, 'x', 'x',"
+                                            + " 'PUBLIC', 1, true)")
+                                    .setParameter("problemId", problemId)
+                                    .executeUpdate()))
             .isInstanceOf(RuntimeException.class);
     }
 
